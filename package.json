@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@clerk/expo": "3.2.16",
+    "@expo/vector-icons": "^15.1.1",
     "@gluestack-ui/nativewind-utils": "1.0.28",
     "@tanstack/react-query": "5.100.14",
     "axios": "1.16.1",

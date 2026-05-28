@@ -4,7 +4,7 @@ export type Exercise = {
   slug: string;
   category: string;
   muscleGroups: string[];
-  equipment: string;
+  equipment: string[];
   difficulty: string;
   instructionUrl?: string;
   thumbnailUrl?: string;

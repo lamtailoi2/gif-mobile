@@ -1,8 +1,10 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Radius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { Exercise } from "@/types/common";
-import { Image, Pressable, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -12,103 +14,257 @@ interface ExerciseCardProps {
 export default function ExerciseCard({ exercise, onPress }: ExerciseCardProps) {
   const theme = useTheme();
 
+  const equipmentText = Array.isArray(exercise.equipment)
+    ? exercise.equipment.join(", ")
+    : exercise.equipment || "Equipment";
+
   return (
-    <Pressable onPress={() => onPress?.(exercise)}>
+    <Pressable
+      onPress={() => onPress?.(exercise)}
+      style={({ pressed }) => [
+        styles.pressableContainer,
+        {
+          opacity: pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
+      ]}
+    >
       <ThemedView
         style={[
           styles.container,
           {
-            borderColor: theme.backgroundSelected,
-            backgroundColor: theme.backgroundElement,
+            backgroundColor: `${theme.surfaceContainer}99`,
+            borderColor: `${theme.border}40`,
           },
         ]}
       >
         {/* Thumbnail */}
         {exercise.thumbnailUrl && (
-          <Image
-            source={{ uri: exercise.thumbnailUrl }}
-            style={styles.thumbnail}
-          />
+          <View
+            style={[
+              styles.thumbnailContainer,
+              { borderColor: `${theme.border}40` },
+            ]}
+          >
+            <Image
+              source={{ uri: exercise.thumbnailUrl }}
+              style={styles.thumbnail}
+            />
+          </View>
         )}
 
-        {/* Content */}
-        <ThemedView style={styles.content}>
-          <ThemedText style={styles.title}>{exercise.name}</ThemedText>
-
-          <ThemedView style={styles.meta}>
-            <ThemedText style={styles.metaText}>{exercise.category}</ThemedText>
-            <ThemedText style={styles.metaText}>
-              {exercise.difficulty}
+        {/* Content Container */}
+        <View style={styles.contentWrapper}>
+          {/* Left Content */}
+          <View style={styles.mainContent}>
+            {/* Category */}
+            <ThemedText
+              style={[
+                styles.categoryLabel,
+                { color: theme.secondaryContainer },
+              ]}
+            >
+              {exercise.category}
             </ThemedText>
-          </ThemedView>
 
-          <ThemedText style={styles.muscleGroups}>
-            {exercise.muscleGroups.join(", ")}
-          </ThemedText>
-
-          {exercise.equipment && (
-            <ThemedText style={styles.equipment}>
-              Equipment: {exercise.equipment}
+            {/* Title */}
+            <ThemedText style={[styles.title, { color: theme.onSurface }]}>
+              {exercise.name}
             </ThemedText>
-          )}
 
-          <ThemedView style={styles.reps}>
-            <ThemedText style={styles.repText}>
-              {exercise.defaultSets} sets x {exercise.defaultReps} reps
+            {/* Muscle Groups */}
+            <ThemedText
+              style={[styles.muscleGroups, { color: theme.onSurfaceVariant }]}
+            >
+              {exercise.muscleGroups.join(", ")}
             </ThemedText>
-          </ThemedView>
-        </ThemedView>
+
+            {/* Meta Info Row */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <MaterialIcons
+                  name="fitness-center"
+                  size={14}
+                  color={theme.onSurfaceVariant}
+                />
+                <ThemedText
+                  style={[styles.metaValue, { color: theme.onSurfaceVariant }]}
+                >
+                  {equipmentText}
+                </ThemedText>
+              </View>
+
+              <View style={styles.metaItem}>
+                <MaterialIcons
+                  name="schedule"
+                  size={14}
+                  color={theme.onSurfaceVariant}
+                />
+                <ThemedText
+                  style={[styles.metaValue, { color: theme.onSurfaceVariant }]}
+                >
+                  {exercise.defaultReps} reps
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+
+          {/* Right Content: Difficulty & Buttons */}
+          <View style={styles.rightContent}>
+            {/* Difficulty Badge */}
+            <View
+              style={[
+                styles.difficultyBadge,
+                {
+                  backgroundColor:
+                    exercise.difficulty === "Advanced"
+                      ? `${theme.error}33`
+                      : exercise.difficulty === "Intermediate"
+                        ? `${theme.outlineVariant}33`
+                        : `${theme.primaryFixedDim}33`,
+                  borderColor:
+                    exercise.difficulty === "Advanced"
+                      ? `${theme.error}66`
+                      : exercise.difficulty === "Intermediate"
+                        ? `${theme.outlineVariant}66`
+                        : `${theme.primaryFixedDim}66`,
+                },
+              ]}
+            >
+              <ThemedText
+                style={[
+                  styles.difficultyText,
+                  {
+                    color:
+                      exercise.difficulty === "Advanced"
+                        ? theme.error
+                        : exercise.difficulty === "Intermediate"
+                          ? theme.onSurfaceVariant
+                          : theme.primaryFixedDim,
+                  },
+                ]}
+              >
+                {exercise.difficulty}
+              </ThemedText>
+            </View>
+
+            {/* Chevron */}
+            <MaterialIcons
+              name="chevron-right"
+              size={20}
+              color={theme.onSurfaceVariant}
+              style={{ opacity: 0.5 }}
+            />
+
+            {/* Add Button */}
+            <Pressable
+              onPress={() => onPress?.(exercise)}
+              style={({ pressed: addPressed }) => [
+                styles.addButton,
+                {
+                  backgroundColor: addPressed
+                    ? theme.primaryFixedDim
+                    : `${theme.primaryFixedDim}20`,
+                  borderColor: theme.primaryFixedDim,
+                },
+              ]}
+            >
+              <MaterialIcons
+                name="add"
+                size={20}
+                color={theme.primaryFixedDim}
+              />
+            </Pressable>
+          </View>
+        </View>
       </ThemedView>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressableContainer: {},
   container: {
-    borderRadius: 8,
+    borderRadius: Radius.xl,
     overflow: "hidden",
     borderWidth: 1,
+    marginBottom: Spacing.gutter,
+    flexDirection: "row",
+  },
+  thumbnailContainer: {
+    width: 100,
+    height: 100,
+    borderRightWidth: 1,
+    overflow: "hidden",
+    flexShrink: 0,
   },
   thumbnail: {
     width: "100%",
-    height: 150,
-    backgroundColor: "#f0f0f0",
+    height: "100%",
   },
-  content: {
-    padding: 12,
+  contentWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    padding: Spacing.stackMd,
+    gap: Spacing.gutter,
+    alignItems: "flex-start",
+  },
+  mainContent: {
+    flex: 1,
+    gap: 4,
+  },
+  categoryLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  meta: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  metaText: {
-    fontSize: 12,
-    opacity: 0.7,
-    textTransform: "capitalize",
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
   },
   muscleGroups: {
-    fontSize: 13,
-    opacity: 0.8,
-    marginBottom: 6,
-  },
-  equipment: {
     fontSize: 12,
-    opacity: 0.7,
     marginBottom: 8,
   },
-  reps: {
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
+  metaRow: {
+    flexDirection: "row",
+    gap: Spacing.gutter,
   },
-  repText: {
-    fontSize: 13,
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaValue: {
+    fontSize: 11,
     fontWeight: "500",
+  },
+  rightContent: {
+    alignItems: "flex-end",
+    gap: 8,
+    justifyContent: "flex-start",
+  },
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  difficultyText: {
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
   },
 });
