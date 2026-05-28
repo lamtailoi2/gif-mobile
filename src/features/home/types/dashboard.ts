@@ -1,12 +1,12 @@
-export type MuscleGroup =
-  | "chest"
-  | "shoulders"
-  | "back"
-  | "arms"
-  | "legs"
-  | "core";
+import type { Slug } from "react-native-body-highlighter";
 
-export type RecoveryState = "recovered" | "fatigued" | "neutral";
+export type MuscleSlug = Slug;
+
+export enum ERecoveryState {
+  Recovered = "recovered",
+  Fatigued = "fatigued",
+  Neutral = "neutral",
+}
 
 export interface IDashboardUser {
   name: string;
@@ -32,7 +32,7 @@ export interface ITodaysWorkout {
 }
 
 export interface IRecoveryMap {
-  states: Partial<Record<MuscleGroup, RecoveryState>>;
+  states: Partial<Record<MuscleSlug, ERecoveryState>>;
 }
 
 export interface IHomeDashboard {

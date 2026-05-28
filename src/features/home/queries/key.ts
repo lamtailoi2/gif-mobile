@@ -1,3 +1,3 @@
-export enum homeQueryKeys {
+export enum EHomeQueryKeys {
   GetHomeDashboard = "getHomeDashboard",
 }

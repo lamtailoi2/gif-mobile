@@ -1,4 +1,4 @@
-import { IHomeDashboard } from "../types/dashboard";
+import { ERecoveryState, IHomeDashboard } from "../types/dashboard";
 
 const MOCK_DASHBOARD: IHomeDashboard = {
   user: {
@@ -24,8 +24,11 @@ const MOCK_DASHBOARD: IHomeDashboard = {
   },
   recoveryMap: {
     states: {
-      chest: "recovered",
-      shoulders: "fatigued",
+      chest: ERecoveryState.Recovered,
+      triceps: ERecoveryState.Recovered,
+      deltoids: ERecoveryState.Fatigued,
+      trapezius: ERecoveryState.Fatigued,
+      abs: ERecoveryState.Recovered,
     },
   },
 };

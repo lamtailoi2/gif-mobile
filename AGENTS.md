@@ -36,6 +36,7 @@ No test framework is configured.
 - **Zustand stores**: file `use-*-store.ts`, hook `useFooStore` (e.g. `use-exercise-library-store.ts` → `useExerciseLibraryStore`).
 - **Interfaces**: `PascalCase` with `I` prefix (e.g. `IExercise`, `IExerciseCardProps`).
 - **Types**: `PascalCase` with `I` prefix for object-shape aliases (e.g. `IExerciseFilterParams`); union/utility aliases can stay plain `PascalCase` (e.g. `ThemeColor`).
+- **Enums**: `PascalCase` with `E` prefix (e.g. `ERecoveryState`, `EHomeQueryKeys`). Prefer `enum` over string-literal unions for closed sets so members can be referenced by name (`ERecoveryState.Recovered`).
 - **Constants**: `UPPERCASE` (`SCREAMING_SNAKE_CASE` when multi-word) for primitive values, e.g. `MAX_CONTENT_WIDTH`, `BOTTOM_TAB_INSET`. Grouped design-token objects keep `PascalCase` (`Colors`, `GIFColors`, `Spacing`, `Radius`).
 - **Functions**: `camelCase` and must start with a verb describing the action (e.g. `getAllExercises`, `parseArray`, `handleExercisePress`, `useExerciseFilter` — `use` itself is the verb for hooks). Avoid noun-only names like `exerciseData()`.
 - **Expo Router routes**: follow file-based routing conventions — `[id].tsx`, `_layout.tsx`, `(group)/` — kebab-case for static segments.

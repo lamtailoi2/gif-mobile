@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import Body, { ExtendedBodyPart } from "react-native-body-highlighter";
 
 import { GIFColors } from "@/constants/theme";
-import { IRecoveryMap } from "../types/dashboard";
+import { ERecoveryState, IRecoveryMap, MuscleSlug } from "../types/dashboard";
 import GlassPanel from "./glass-panel";
 
 interface IRecoveryMapProps {
@@ -9,28 +11,41 @@ interface IRecoveryMapProps {
   onDetailsPress?: () => void;
 }
 
-const GREEN_GLOW = {
-  shadowColor: GIFColors.primaryFixedDim,
-  shadowOpacity: 0.8,
-  shadowRadius: 15,
-  shadowOffset: { width: 0, height: 0 },
-  elevation: 6,
+const STATE_COLOR: Record<ERecoveryState, string> = {
+  [ERecoveryState.Recovered]: GIFColors.primaryFixedDim,
+  [ERecoveryState.Fatigued]: GIFColors.secondary,
+  [ERecoveryState.Neutral]: GIFColors.surfaceContainerHigh,
 };
 
-const BLUE_GLOW = {
-  shadowColor: GIFColors.secondary,
-  shadowOpacity: 0.6,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 0 },
-  elevation: 6,
+const STATE_INTENSITY: Record<ERecoveryState, number> = {
+  [ERecoveryState.Recovered]: 1,
+  [ERecoveryState.Fatigued]: 2,
+  [ERecoveryState.Neutral]: 0,
 };
+
+const toBodyData = (
+  states: Partial<Record<MuscleSlug, ERecoveryState>>,
+): ExtendedBodyPart[] =>
+  Object.entries(states).map(([slug, state]) => ({
+    slug: slug as MuscleSlug,
+    color: STATE_COLOR[state as ERecoveryState],
+    intensity: STATE_INTENSITY[state as ERecoveryState],
+  }));
+
+const GLOW = (color: string) => ({
+  shadowColor: color,
+  shadowOpacity: 0.8,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 0 },
+  elevation: 4,
+});
 
 export default function RecoveryMap({
   recovery,
   onDetailsPress,
 }: IRecoveryMapProps) {
-  const chestRecovered = recovery.states.chest === "recovered";
-  const shouldersFatigued = recovery.states.shoulders === "fatigued";
+  const [side, setSide] = useState<"front" | "back">("front");
+  const data = toBodyData(recovery.states);
 
   return (
     <GlassPanel className="p-6">
@@ -45,52 +60,58 @@ export default function RecoveryMap({
         </Pressable>
       </View>
 
-      <View className="w-full h-48 rounded-lg bg-surface-container-low/50 border border-white/5 items-center justify-center overflow-hidden">
-        <View className="w-24 h-40 items-center">
-          <View className="w-8 h-10 border border-white/20 rounded-full mb-1" />
+      <View className="w-full rounded-lg bg-surface-container-low/50 border border-white/5 items-center justify-center overflow-hidden py-4">
+        <Body
+          data={data}
+          side={side}
+          gender="male"
+          scale={1.1}
+          border={GIFColors.outlineVariant}
+          defaultFill={GIFColors.surfaceContainerHigh}
+        />
 
-          <View className="w-16 h-20 border border-white/20 rounded-md relative">
-            {chestRecovered && (
-              <View
-                className="absolute top-2 left-1/2 w-12 h-6 bg-primary-fixed-dim/60 rounded-full"
-                style={[{ transform: [{ translateX: -24 }] }, GREEN_GLOW]}
-              />
-            )}
-          </View>
-
-          {shouldersFatigued && (
-            <>
-              <View
-                className="absolute top-12 -left-1 w-6 h-8 bg-secondary/50 rounded-full"
-                style={BLUE_GLOW}
-              />
-              <View
-                className="absolute top-12 -right-1 w-6 h-8 bg-secondary/50 rounded-full"
-                style={BLUE_GLOW}
-              />
-            </>
-          )}
+        <View className="absolute top-3 right-3 flex-row rounded-full bg-surface-container-high/70 border border-white/10 p-0.5">
+          <Pressable
+            onPress={() => setSide("front")}
+            className={`px-3 py-1 rounded-full ${side === "front" ? "bg-primary-fixed-dim" : ""}`}
+          >
+            <Text
+              className={`text-[10px] font-mono uppercase ${side === "front" ? "text-on-primary-fixed" : "text-on-surface-variant"}`}
+            >
+              Front
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setSide("back")}
+            className={`px-3 py-1 rounded-full ${side === "back" ? "bg-primary-fixed-dim" : ""}`}
+          >
+            <Text
+              className={`text-[10px] font-mono uppercase ${side === "back" ? "text-on-primary-fixed" : "text-on-surface-variant"}`}
+            >
+              Back
+            </Text>
+          </Pressable>
         </View>
+      </View>
 
-        <View className="absolute bottom-3 left-3 right-3 flex-row justify-between">
-          <View className="flex-row items-center gap-1">
-            <View
-              className="w-2 h-2 rounded-full bg-primary-fixed-dim"
-              style={GREEN_GLOW}
-            />
-            <Text className="text-[10px] font-mono text-on-surface-variant uppercase">
-              Recovered
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <View
-              className="w-2 h-2 rounded-full bg-secondary"
-              style={BLUE_GLOW}
-            />
-            <Text className="text-[10px] font-mono text-on-surface-variant uppercase">
-              Fatigued
-            </Text>
-          </View>
+      <View className="flex-row justify-between mt-3 px-1">
+        <View className="flex-row items-center gap-1.5">
+          <View
+            className="w-2 h-2 rounded-full bg-primary-fixed-dim"
+            style={GLOW(GIFColors.primaryFixedDim)}
+          />
+          <Text className="text-[10px] font-mono text-on-surface-variant uppercase">
+            Recovered
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-1.5">
+          <View
+            className="w-2 h-2 rounded-full bg-secondary"
+            style={GLOW(GIFColors.secondary)}
+          />
+          <Text className="text-[10px] font-mono text-on-surface-variant uppercase">
+            Fatigued
+          </Text>
         </View>
       </View>
     </GlassPanel>
