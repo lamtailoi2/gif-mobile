@@ -44,6 +44,7 @@ No test framework is configured.
 
 - **Design First**: Always read and analyze the provided design files carefully before implementing any UI.
 - **Ask Before Doing**: Do not make assumptions. Always ask for clarification or confirmation on logic, design details, or architecture before writing any code.
+- **Plan & Confirm First**: Always produce a clear implementation plan (steps, files to touch, components/hooks to create or change) and explicitly ask the user to confirm the plan before writing or editing any code. Do not start coding until the user approves.
 
 ## Key config
 
