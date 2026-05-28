@@ -28,6 +28,18 @@ No test framework is configured.
 - **Hooks**: `src/hooks/` — `use-color-scheme.ts`, `use-theme.ts` (platform-aware)
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (from tsconfig.json)
 
+## Naming Conventions
+
+- **Files & folders**: `kebab-case` for all `.ts` / `.tsx` files and directories (e.g. `exercise-card.tsx`, `use-exercises-filter.ts`, `exercise-library/`).
+- **React components**: `PascalCase` for the exported symbol — file is kebab-case, default export is PascalCase (e.g. `exercise-guide.tsx` exports `ExerciseGuide`).
+- **Hooks**: file `use-*.ts` (kebab-case), function `useFoo` (camelCase prefix), e.g. `use-exercises-filter.ts` → `useExerciseFilter`.
+- **Zustand stores**: file `use-*-store.ts`, hook `useFooStore` (e.g. `use-exercise-library-store.ts` → `useExerciseLibraryStore`).
+- **Interfaces**: `PascalCase` with `I` prefix (e.g. `IExercise`, `IExerciseCardProps`).
+- **Types**: `PascalCase` with `I` prefix for object-shape aliases (e.g. `IExerciseFilterParams`); union/utility aliases can stay plain `PascalCase` (e.g. `ThemeColor`).
+- **Constants**: `UPPERCASE` (`SCREAMING_SNAKE_CASE` when multi-word) for primitive values, e.g. `MAX_CONTENT_WIDTH`, `BOTTOM_TAB_INSET`. Grouped design-token objects keep `PascalCase` (`Colors`, `GIFColors`, `Spacing`, `Radius`).
+- **Functions**: `camelCase` and must start with a verb describing the action (e.g. `getAllExercises`, `parseArray`, `handleExercisePress`, `useExerciseFilter` — `use` itself is the verb for hooks). Avoid noun-only names like `exerciseData()`.
+- **Expo Router routes**: follow file-based routing conventions — `[id].tsx`, `_layout.tsx`, `(group)/` — kebab-case for static segments.
+
 ## Development Workflow & Rules
 
 - **Design First**: Always read and analyze the provided design files carefully before implementing any UI.
