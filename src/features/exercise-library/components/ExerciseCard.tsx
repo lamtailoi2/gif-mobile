@@ -214,19 +214,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   title: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: "700",
     marginBottom: 2,
   },
   muscleGroups: {
-    fontSize: 12,
+    fontSize: 15,
     marginBottom: 8,
   },
   metaRow: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metaValue: {
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "500",
   },
   rightContent: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   difficultyText: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
