@@ -1,375 +1,119 @@
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Radius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import { Exercise } from "@/types/common";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, View } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { IExercise } from "../types/exercise";
 
-interface ExerciseGuideProps {
-  exercise: Exercise;
+interface IExerciseGuideProps {
+  exercise: IExercise;
 }
 
-export default function ExerciseGuide({ exercise }: ExerciseGuideProps) {
+export default function ExerciseGuide({ exercise }: IExerciseGuideProps) {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+
+  const difficultyTone =
+    exercise.difficulty === "Advanced"
+      ? {
+          bg: "bg-error/[0.13]",
+          border: "border-error/40",
+          text: "text-error",
+        }
+      : exercise.difficulty === "Intermediate"
+        ? {
+            bg: "bg-outline-variant/[0.13]",
+            border: "border-outline-variant/40",
+            text: "text-on-surface-variant",
+          }
+        : {
+            bg: "bg-primary-fixed-dim/[0.13]",
+            border: "border-primary-fixed-dim/40",
+            text: "text-primary-fixed-dim",
+          };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Fixed Header with Back Button */}
-      <View
-        style={{
-          paddingHorizontal: Spacing.containerPaddingMobile,
-          paddingTop: Spacing.stackSm,
-          paddingBottom: Spacing.stackSm,
-          backgroundColor: theme.background,
-          borderBottomWidth: 1,
-          borderBottomColor: `${theme.border}40`,
-          zIndex: 10,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: Spacing.gutter,
-          }}
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="px-container-mobile py-stack-sm">
+        <Pressable
+          onPress={() => router.back()}
+          className="w-10 h-10 justify-center items-center rounded-full border bg-surface-container/60 border-surface-variant/25 active:opacity-70"
         >
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [
-              {
-                padding: Spacing.stackSm,
-                backgroundColor: `${theme.border}40`,
-                borderRadius: Radius.lg,
-                borderWidth: 1,
-                borderColor: `${theme.border}66`,
-                opacity: pressed ? 0.7 : 1,
-                minWidth: 44,
-                minHeight: 44,
-                justifyContent: "center",
-                alignItems: "center",
-              },
-            ]}
-          >
-            <ThemedText style={{ fontSize: 20, fontWeight: "700" }}>
-              ←
-            </ThemedText>
-          </Pressable>
-          <ThemedText
-            style={{
-              flex: 1,
-              fontSize: 18,
-              fontWeight: "700",
-              color: theme.onSurface,
-            }}
-          >
-            Exercise Guide
-          </ThemedText>
-        </View>
+          <MaterialIcons name="arrow-back" size={22} color={theme.onSurface} />
+        </Pressable>
       </View>
 
-      {/* Scrollable Content */}
       <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: Spacing.containerPaddingMobile,
-          paddingBottom: Spacing.stackLg,
-        }}
+        contentContainerClassName="px-container-mobile pb-stack-lg gap-gutter"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Featured Image */}
-        {exercise.thumbnailUrl && (
-          <View
-            style={{
-              width: "100%",
-              height: 240,
-              borderRadius: Radius.xl,
-              overflow: "hidden",
-              marginVertical: Spacing.stackMd,
-              borderWidth: 1,
-              borderColor: `${theme.border}40`,
-            }}
-          >
+        {exercise.thumbnailUrl ? (
+          <View className="w-full aspect-[16/10] overflow-hidden rounded-xl border border-surface-variant/25">
             <Image
               source={{ uri: exercise.thumbnailUrl }}
-              style={{ width: "100%", height: "100%" }}
+              className="w-full h-full"
+              resizeMode="cover"
             />
           </View>
-        )}
+        ) : null}
 
-        {/* Title & Category */}
-        <ThemedText
-          style={{
-            fontSize: 28,
-            fontWeight: "800",
-            marginBottom: Spacing.stackSm,
-            color: theme.onSurface,
-          }}
-        >
+        <Text className="text-[11px] font-bold uppercase tracking-[0.6px] mt-stack-sm text-secondary-container">
+          {exercise.category}
+        </Text>
+
+        <Text className="text-[28px] font-bold leading-[34px] text-on-surface">
           {exercise.name}
-        </ThemedText>
+        </Text>
 
-        {/* Badge Row */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: Spacing.gutter,
-            marginBottom: Spacing.stackMd,
-          }}
-        >
+        <View className="flex-row gap-2">
           <View
-            style={{
-              paddingHorizontal: Spacing.stackSm,
-              paddingVertical: 6,
-              borderRadius: Radius.full,
-              backgroundColor: `${theme.secondaryContainer}33`,
-              borderWidth: 1,
-              borderColor: `${theme.secondaryContainer}66`,
-            }}
+            className={`px-2.5 py-1 rounded border ${difficultyTone.bg} ${difficultyTone.border}`}
           >
-            <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: theme.secondaryContainer,
-                textTransform: "uppercase",
-              }}
-            >
-              {exercise.category}
-            </ThemedText>
-          </View>
-
-          <View
-            style={{
-              paddingHorizontal: Spacing.stackSm,
-              paddingVertical: 6,
-              borderRadius: Radius.full,
-              backgroundColor:
-                exercise.difficulty === "Advanced"
-                  ? `${theme.error}33`
-                  : `${theme.primaryFixedDim}33`,
-              borderWidth: 1,
-              borderColor:
-                exercise.difficulty === "Advanced"
-                  ? `${theme.error}66`
-                  : `${theme.primaryFixedDim}66`,
-            }}
-          >
-            <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color:
-                  exercise.difficulty === "Advanced"
-                    ? theme.error
-                    : theme.primaryFixedDim,
-                textTransform: "uppercase",
-              }}
+            <Text
+              className={`text-[10px] font-bold uppercase tracking-[0.5px] ${difficultyTone.text}`}
             >
               {exercise.difficulty}
-            </ThemedText>
+            </Text>
           </View>
         </View>
 
-        {/* Info Grid */}
-        <View style={{ marginBottom: Spacing.stackMd }}>
-          <View
-            style={{
-              flexDirection: "row",
-              gap: Spacing.gutter,
-              marginBottom: Spacing.gutter,
-            }}
-          >
-            {/* Targets */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 6,
-              }}
-            >
-              <MaterialIcons
-                name="fitness-center"
-                size={14}
-                color={theme.primaryFixedDim}
-              />
-
-              <ThemedText
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: theme.onSurfaceVariant,
-                  textTransform: "uppercase",
-                  marginLeft: 6,
-                  opacity: 0.7,
-                }}
-              >
-                Targets
-              </ThemedText>
-            </View>
-
-            {/* Equipment */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 6,
-              }}
-            >
-              <MaterialIcons
-                name="build"
-                size={14}
-                color={theme.primaryFixedDim}
-              />
-
-              <ThemedText
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: theme.onSurfaceVariant,
-                  textTransform: "uppercase",
-                  marginLeft: 6,
-                  opacity: 0.7,
-                }}
-              >
-                Equipment
-              </ThemedText>
-            </View>
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: Spacing.gutter,
-            }}
-          >
-            {/* Sets */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 6,
-              }}
-            >
-              <MaterialIcons
-                name="bar-chart"
-                size={14}
-                color={theme.primaryFixedDim}
-              />
-
-              <ThemedText
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: theme.onSurfaceVariant,
-                  textTransform: "uppercase",
-                  marginLeft: 6,
-                  opacity: 0.7,
-                }}
-              >
-                Sets
-              </ThemedText>
-            </View>
-
-            {/* Reps */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 6,
-              }}
-            >
-              <MaterialIcons
-                name="repeat"
-                size={14}
-                color={theme.primaryFixedDim}
-              />
-
-              <ThemedText
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: theme.onSurfaceVariant,
-                  textTransform: "uppercase",
-                  marginLeft: 6,
-                  opacity: 0.7,
-                }}
-              >
-                Reps
-              </ThemedText>
-            </View>
-          </View>
+        <View className="gap-1.5 rounded-lg border p-stack-md bg-surface-container/60 border-surface-variant/25">
+          <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-on-surface-variant">
+            Muscle Groups
+          </Text>
+          <Text className="text-[15px] font-medium text-on-surface">
+            {exercise.muscleGroups.join(", ") || "—"}
+          </Text>
         </View>
 
-        {/* Description Section */}
-        <ThemedView
-          style={{
-            borderRadius: Radius.lg,
-            backgroundColor: `${theme.surfaceContainer}99`,
-            borderWidth: 1,
-            borderColor: `${theme.border}40`,
-            padding: Spacing.stackMd,
-            marginBottom: Spacing.stackMd,
-          }}
-        >
-          <ThemedText
-            style={{
-              fontSize: 14,
-              fontWeight: "600",
-              marginBottom: Spacing.stackSm,
-              color: theme.onSurface,
-              textTransform: "uppercase",
-            }}
-          >
-            📋 Instructions
-          </ThemedText>
-          <ThemedText
-            style={{
-              fontSize: 14,
-              lineHeight: 22,
-              color: theme.onSurfaceVariant,
-            }}
-          >
-            Follow proper form by maintaining control throughout the movement.
-            Focus on the target muscle group and avoid using momentum. Start
-            with a weight that allows you to complete all reps with good form,
-            then gradually increase resistance as you get stronger.
-          </ThemedText>
-        </ThemedView>
+        <View className="gap-1.5 rounded-lg border p-stack-md bg-surface-container/60 border-surface-variant/25">
+          <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-on-surface-variant">
+            Equipment
+          </Text>
+          <Text className="text-[15px] font-medium text-on-surface">
+            {exercise.equipment.join(", ") || "Bodyweight"}
+          </Text>
+        </View>
 
-        {/* CTA Button */}
-        <Pressable
-          style={({ pressed }) => [
-            {
-              paddingVertical: Spacing.stackSm,
-              paddingHorizontal: Spacing.stackMd,
-              borderRadius: Radius.lg,
-              backgroundColor: pressed
-                ? theme.primaryFixedDim
-                : theme.primaryFixedDim,
-              alignItems: "center",
-              opacity: pressed ? 0.9 : 1,
-              marginBottom: Spacing.stackLg,
-            },
-          ]}
-        >
-          <ThemedText
-            style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: theme.onPrimary,
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-            }}
-          >
-            Add to Workout
-          </ThemedText>
-        </Pressable>
+        <View className="flex-row gap-gutter">
+          <View className="flex-1 items-start gap-1.5 rounded-lg border p-stack-md bg-surface-container/60 border-surface-variant/25">
+            <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-on-surface-variant">
+              Sets
+            </Text>
+            <Text className="text-[28px] font-bold text-on-surface">
+              {exercise.defaultSets}
+            </Text>
+          </View>
+
+          <View className="flex-1 items-start gap-1.5 rounded-lg border p-stack-md bg-surface-container/60 border-surface-variant/25">
+            <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-on-surface-variant">
+              Reps
+            </Text>
+            <Text className="text-[28px] font-bold text-on-surface">
+              {exercise.defaultReps}
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

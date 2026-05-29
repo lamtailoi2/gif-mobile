@@ -1,5 +1,5 @@
-import ExerciseGuide from "@/features/exercise-library/components/ExerciseGuide";
-import { Exercise } from "@/types/common";
+import ExerciseGuide from "@/features/exercise-library/components/exercise-guide";
+import { IExercise } from "@/features/exercise-library/types/exercise";
 import { useLocalSearchParams } from "expo-router";
 
 // Helper function để parse arrays an toàn
@@ -28,7 +28,7 @@ export default function ExerciseDetailsScreen() {
   const params = useLocalSearchParams();
 
   try {
-    const exercise: Exercise = {
+    const exercise: IExercise = {
       id: params.id as string,
       name: params.name as string,
       slug: (params.slug as string) || "",

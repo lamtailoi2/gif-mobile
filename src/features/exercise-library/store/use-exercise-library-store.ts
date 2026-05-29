@@ -1,15 +1,15 @@
 import { create } from "zustand";
-import { ExerciseFilterParams } from "../hooks/useExercisesFilter";
+import { IExerciseFilterParams } from "../hooks/use-exercises-filter";
 
-interface ExerciseLibraryStore {
-  filters: ExerciseFilterParams;
+interface IExerciseLibraryStore {
+  filters: IExerciseFilterParams;
   selectedExerciseId: string | null;
-  setFilters: (filters: ExerciseFilterParams) => void;
+  setFilters: (filters: IExerciseFilterParams) => void;
   setSelectedExerciseId: (id: string | null) => void;
   clearFilters: () => void;
 }
 
-export const useExerciseLibraryStore = create<ExerciseLibraryStore>((set) => ({
+export const useExerciseLibraryStore = create<IExerciseLibraryStore>((set) => ({
   filters: {},
   selectedExerciseId: null,
   setFilters: (filters) => set({ filters }),

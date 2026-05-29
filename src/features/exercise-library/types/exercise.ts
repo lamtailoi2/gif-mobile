@@ -1,4 +1,4 @@
-export type Exercise = {
+export interface IExercise {
   id: string;
   name: string;
   slug: string;
@@ -10,4 +10,4 @@ export type Exercise = {
   thumbnailUrl?: string;
   defaultSets: number;
   defaultReps: number;
-};
+}

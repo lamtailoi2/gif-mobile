@@ -1,7 +1,7 @@
-import { Exercise } from "@/types/common";
 import { useMemo } from "react";
+import { IExercise } from "../types/exercise";
 
-export interface ExerciseFilterParams {
+export interface IExerciseFilterParams {
   category?: "strength" | "cardio" | "flexibility" | "plyometric";
   muscleGroup?: string;
   equipment?: string[];
@@ -9,8 +9,8 @@ export interface ExerciseFilterParams {
 }
 
 export const useExerciseFilter = (
-  exercises: Exercise[],
-  filters: ExerciseFilterParams,
+  exercises: IExercise[],
+  filters: IExerciseFilterParams,
 ) => {
   return useMemo(() => {
     let filtered = [...exercises];

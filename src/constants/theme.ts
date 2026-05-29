@@ -7,7 +7,75 @@ import "@/global.css";
 
 import { Platform } from "react-native";
 
-// G.I.F Color Palette - Dark theme with neon accents
+// Full DESIGN.md palette — camelCase tokens for use in StyleSheet / inline styles
+export const GIFColors = {
+  // Surface
+  surface: "#131313",
+  surfaceDim: "#131313",
+  surfaceBright: "#3a3939",
+  surfaceContainerLowest: "#0e0e0e",
+  surfaceContainerLow: "#1c1b1b",
+  surfaceContainer: "#201f1f",
+  surfaceContainerHigh: "#2a2a2a",
+  surfaceContainerHighest: "#353534",
+  surfaceVariant: "#353534",
+  surfaceTint: "#abd600",
+  onSurface: "#e5e2e1",
+  onSurfaceVariant: "#c4c9ac",
+  inverseSurface: "#e5e2e1",
+  inverseOnSurface: "#313030",
+  outline: "#8e9379",
+  outlineVariant: "#444933",
+
+  // Primary — Neon Green (Action & Growth)
+  primary: "#ffffff",
+  onPrimary: "#283500",
+  primaryContainer: "#c3f400",
+  onPrimaryContainer: "#556d00",
+  inversePrimary: "#506600",
+  primaryFixed: "#c3f400",
+  primaryFixedDim: "#abd600",
+  onPrimaryFixed: "#161e00",
+  onPrimaryFixedVariant: "#3c4d00",
+
+  // Secondary — Electric Blue (Intelligence & Data)
+  secondary: "#adc6ff",
+  onSecondary: "#002e69",
+  secondaryContainer: "#4b8eff",
+  onSecondaryContainer: "#00285c",
+  secondaryFixed: "#d8e2ff",
+  secondaryFixedDim: "#adc6ff",
+  onSecondaryFixed: "#001a41",
+  onSecondaryFixedVariant: "#004493",
+
+  // Tertiary — White / Soft Gray
+  tertiary: "#ffffff",
+  onTertiary: "#2f3131",
+  tertiaryContainer: "#e2e2e2",
+  onTertiaryContainer: "#636565",
+  tertiaryFixed: "#e2e2e2",
+  tertiaryFixedDim: "#c6c6c7",
+  onTertiaryFixed: "#1a1c1c",
+  onTertiaryFixedVariant: "#454747",
+
+  // Error
+  error: "#ffb4ab",
+  onError: "#690005",
+  errorContainer: "#93000a",
+  onErrorContainer: "#ffdad6",
+
+  // Background
+  background: "#131313",
+  onBackground: "#e5e2e1",
+
+  // Semantic shortcuts used throughout the design system
+  neonGreen: "#abd600",
+  electricBlue: "#4b8eff",
+} as const;
+
+export type GIFColor = keyof typeof GIFColors;
+
+// G.I.F Color Palette - Dark theme with neon accents (rich light/dark schemes)
 export const Colors = {
   light: {
     // Surface & Background
