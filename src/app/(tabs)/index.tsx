@@ -7,11 +7,13 @@ import StreakCard from "@/features/home/components/streak-card";
 import TodaysWorkoutCard from "@/features/home/components/todays-workout-card";
 import { useHomeDashboard } from "@/features/home/hooks/use-home-dashboard";
 import { useUser } from "@clerk/expo";
+import { useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function HomeScreen() {
   const { data, isLoading } = useHomeDashboard();
   const { user } = useUser();
+  const router = useRouter();
   return (
     <SafeAreaView
       edges={["top"]}
@@ -56,7 +58,7 @@ export default function HomeScreen() {
 
           <TodaysWorkoutCard
             workout={data.todaysWorkout}
-            onPress={() => console.log("workout pressed")}
+            onPress={() => router.push("/workout-active-session")}
           />
 
           <RecoveryMap
