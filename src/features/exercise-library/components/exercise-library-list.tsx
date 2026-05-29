@@ -20,7 +20,7 @@ import {
   useExerciseFilter,
 } from "../hooks/useExercisesFilter";
 import { getAllExercisesQuery } from "../queries";
-import ExerciseCard from "./ExerciseCard";
+import ExerciseCard from "./exercise-card";
 
 interface ExerciseLibraryListProps {
   filters?: ExerciseFilterParams;
@@ -136,7 +136,6 @@ export default function ExerciseLibraryList({
           </View>
 
           {/* Muscle Group Filter */}
-          {/* Muscle Group Filter */}
           <View style={{ marginBottom: Spacing.stackMd }}>
             <View
               style={{
@@ -191,6 +190,7 @@ export default function ExerciseLibraryList({
               contentContainerStyle={{
                 gap: 12,
                 paddingHorizontal: Spacing.containerPaddingMobile,
+                marginBottom: 1,
               }}
               style={{
                 marginHorizontal: -Spacing.containerPaddingMobile,
@@ -218,7 +218,7 @@ export default function ExerciseLibraryList({
                       style={({ pressed }) => [
                         {
                           paddingHorizontal: 40,
-                          paddingVertical: 50,
+                          paddingVertical: 20,
                           borderRadius: 999,
                           justifyContent: "center",
                           alignItems: "center",
