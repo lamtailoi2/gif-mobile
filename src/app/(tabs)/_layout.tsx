@@ -23,20 +23,14 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-
         tabBarStyle: {
           position: "absolute",
-
           left: 16,
           right: 16,
           bottom: 20,
-
           height: 78,
-
           borderRadius: 24,
-
           backgroundColor: "rgba(61, 61, 61, 0.92)",
-
           borderWidth: 1,
           borderColor: "rgba(61, 61, 61, 0.92)",
 
@@ -47,9 +41,7 @@ export default function TabLayout() {
           },
           shadowOpacity: 0.35,
           shadowRadius: 24,
-
           elevation: 12,
-
           paddingTop: 8,
         },
 
