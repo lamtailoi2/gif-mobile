@@ -1,11 +1,12 @@
-import { useAuth } from "@clerk/expo";
+import { getNextOnboardingStep } from "@/lib/profile";
+import { useUser } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 import { MaterialIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   if (!isLoaded) {
     return (
@@ -17,6 +18,14 @@ export default function TabLayout() {
 
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  const nextStep = getNextOnboardingStep(user);
+  if (nextStep === "profile") {
+    return <Redirect href="/setup-profile" />;
+  }
+  if (nextStep === "goal") {
+    return <Redirect href="/setup-goal" />;
   }
 
   return (

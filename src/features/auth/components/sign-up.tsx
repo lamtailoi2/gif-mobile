@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GIFColors } from '@/constants/theme';
 import { useAuthLoading } from '@/context/auth-loading-context';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useClerk, useSignUp, useSSO } from '@clerk/expo';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -19,27 +19,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
+import { SignUpForm, signUpSchema } from '../libs/schema';
 
-const signUpSchema = z
-  .object({
-    email: z
-      .string()
-      .min(1, 'Email is required')
-      .email('Invalid email address'),
-    password: z
-      .string()
-      .min(8, { message: 'Password must be at least 8 characters' })
-      .regex(/[A-Z]/, { message: 'Must contain at least one uppercase letter' })
-      .regex(/[0-9]/, { message: 'Must contain at least one number' }),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
 
-type SignUpForm = z.infer<typeof signUpSchema>;
 
 function GoogleIcon({ size = 20 }: { size?: number }) {
   const r = size / 2;
@@ -138,6 +120,7 @@ export const SignUp = () => {
       const { error: finalizeError } = await signUp.finalize();
       if (finalizeError) {
         setApiError(finalizeError.longMessage ?? finalizeError.message ?? 'Could not complete sign up');
+        return;
       }
     } catch (err: any) {
       setApiError(err?.errors?.[0]?.longMessage ?? err?.message ?? 'Verification failed');
