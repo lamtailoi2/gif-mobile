@@ -1,12 +1,18 @@
-import { getNextOnboardingStep } from "@/lib/profile";
-import { useUser } from "@clerk/expo";
-import { Redirect, Tabs } from "expo-router";
+import { useAuth } from "@clerk/expo";
+import { Redirect, Tabs, usePathname } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 import { MaterialIcons } from "@expo/vector-icons";
 
+const SESSION_ROUTES = ["active-session", "session-complete"];
+
 export default function TabLayout() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const pathname = usePathname();
+
+  const isSessionScreen = SESSION_ROUTES.some((route) =>
+    pathname.includes(route)
+  );
 
   if (!isLoaded) {
     return (
@@ -20,44 +26,36 @@ export default function TabLayout() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  const nextStep = getNextOnboardingStep(user);
-  if (nextStep === "profile") {
-    return <Redirect href="/setup-profile" />;
-  }
-  if (nextStep === "goal") {
-    return <Redirect href="/setup-goal" />;
-  }
+  const tabBarStyle = isSessionScreen
+    ? { display: "none" as const }
+    : {
+        position: "absolute" as const,
+        left: 16,
+        right: 16,
+        bottom: 20,
+        height: 78,
+        borderRadius: 24,
+        backgroundColor: "rgba(61, 61, 61, 0.92)",
+        borderWidth: 1,
+        borderColor: "rgba(61, 61, 61, 0.92)",
+        shadowColor: "#171717",
+        shadowOffset: {
+          width: 0,
+          height: 0,
+        },
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+        elevation: 12,
+        paddingTop: 8,
+      };
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          left: 16,
-          right: 16,
-          bottom: 20,
-          height: 78,
-          borderRadius: 24,
-          backgroundColor: "rgba(61, 61, 61, 0.92)",
-          borderWidth: 1,
-          borderColor: "rgba(61, 61, 61, 0.92)",
-
-          shadowColor: "#171717",
-          shadowOffset: {
-            width: 0,
-            height: 0,
-          },
-          shadowOpacity: 0.35,
-          shadowRadius: 24,
-          elevation: 12,
-          paddingTop: 8,
-        },
-
+        tabBarStyle,
         tabBarActiveTintColor: "#B6FF00",
-
         tabBarInactiveTintColor: "#b4b4b4",
-
         tabBarLabelStyle: {
           fontSize: 15,
           fontWeight: "600",
