@@ -60,7 +60,7 @@ export default function ActiveSession() {
       setTimeLeft(MAX_REST_TIME);
       setIsTimerRunning(true);
     } else {
-      router.replace("/workout-session-complete");
+      router.replace("/(tabs)/workout/session-complete");
     }
   };
 

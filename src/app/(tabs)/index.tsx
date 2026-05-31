@@ -58,7 +58,7 @@ export default function HomeScreen() {
 
           <TodaysWorkoutCard
             workout={data.todaysWorkout}
-            onPress={() => router.push("/workout-active-session")}
+            onPress={() => router.push("/(tabs)/workout/active-session")}
           />
 
           <RecoveryMap
