@@ -19,7 +19,8 @@ export const useExerciseFilter = (
     let filtered = [...exercises];
 
     // Filter by Muscle Group (high-level)
-    // Maps to detailed body parts and uses OR logic within the group
+    // Maps high-level group ("arms", "back") to detailed muscle names ("biceps", "triceps", etc.)
+    // muscleGroups field in Firestore stores detailed names
     if (filters.muscleGroup) {
       const mappedBodyParts = MUSCLE_GROUP_MAPPING[filters.muscleGroup];
       if (mappedBodyParts) {
@@ -39,14 +40,41 @@ export const useExerciseFilter = (
 
     // Category
     if (filters.category) {
-      filtered = filtered.filter((ex) => ex.category === filters.category);
+      const category = filters.category;
+      filtered = filtered.filter((ex) => ex.category === category);
     }
 
     // Difficulty
     if (filters.difficulty) {
-      filtered = filtered.filter((ex) => ex.difficulty === filters.difficulty);
+      const difficulty = filters.difficulty;
+      filtered = filtered.filter((ex) => ex.difficulty === difficulty);
     }
 
     return filtered;
   }, [exercises, filters]);
+};
+/**
+ * Extract unique difficulty values from exercises data
+ */
+export const getUniqueDifficulties = (exercises: IExercise[]): string[] => {
+  const difficulties = new Set<string>();
+  exercises.forEach((ex) => {
+    if (ex.difficulty) {
+      difficulties.add(ex.difficulty);
+    }
+  });
+  return Array.from(difficulties).sort();
+};
+
+/**
+ * Extract unique category values from exercises data
+ */
+export const getUniqueCategories = (exercises: IExercise[]): string[] => {
+  const categories = new Set<string>();
+  exercises.forEach((ex) => {
+    if (ex.category) {
+      categories.add(ex.category);
+    }
+  });
+  return Array.from(categories).sort();
 };

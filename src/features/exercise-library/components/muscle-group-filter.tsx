@@ -4,10 +4,12 @@ import { LayoutRectangle, Pressable, Text, View } from "react-native";
 
 import { EMuscleGroup, MuscleGroup } from "../constants/filter-constants";
 import { IExerciseFilterParams } from "../hooks/use-exercises-filter";
+import { IExercise } from "../types/exercise";
 import AdvancedFilterModal from "./advanced-filter-modal";
 
 interface IMuscleGroupFilterProps {
   selectedMuscleGroup?: MuscleGroup;
+  exercises: IExercise[];
   onMuscleGroupChange: (muscleGroup?: MuscleGroup) => void;
   filters: IExerciseFilterParams;
   onFiltersChange: (filters: IExerciseFilterParams) => void;
@@ -26,6 +28,7 @@ const MUSCLE_GROUPS: {
 ];
 
 export default function MuscleGroupFilter({
+  exercises,
   selectedMuscleGroup,
   onMuscleGroupChange,
   filters,
@@ -49,7 +52,6 @@ export default function MuscleGroupFilter({
 
   return (
     <View className="relative px-gutter py-3 z-30">
-      {/* Toàn màn hình Overlay khi mở Dropdown - Chạm ra ngoài để đóng */}
       {showMuscleGroups && (
         <Pressable
           className="absolute top-0 left-0 right-0 bottom-[-500px] z-10"
@@ -57,7 +59,6 @@ export default function MuscleGroupFilter({
         />
       )}
 
-      {/* Top Row: Thanh điều hướng Bộ lọc */}
       <View className="flex-row items-center justify-between bg-neutral-900/40 p-2 rounded-2xl border border-neutral-400">
         {/* Nút bấm mở Muscle Groups */}
         <View
@@ -116,7 +117,7 @@ export default function MuscleGroupFilter({
           className="absolute z-20 left-gutter right-gutter rounded-2xl border bg-surface-container shadow-2xl p-3 flex-row flex-wrap justify-between"
           style={{
             top: anchorLayout.y + anchorLayout.height + 24,
-            borderColor: "rgba(117, 154, 4, 0.3)", // Sử dụng style thuần tránh lỗi Reanimated
+            borderColor: "rgba(117, 154, 4, 0.3)",
             backgroundColor: "rgba(30, 30, 32, 0.98)",
           }}
         >
@@ -161,6 +162,7 @@ export default function MuscleGroupFilter({
       {/* Advanced Filter Modal */}
       <AdvancedFilterModal
         visible={showAdvancedFilter}
+        exercises={exercises}
         filters={filters}
         onFiltersChange={onFiltersChange}
         onClose={() => setShowAdvancedFilter(false)}

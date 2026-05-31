@@ -85,6 +85,7 @@ export default function ExerciseLibraryList({
       {/* Floating Filter Layer */}
       <View className="z-50">
         <MuscleGroupFilter
+          exercises={exercises}
           selectedMuscleGroup={selectedMuscleGroup}
           onMuscleGroupChange={handleMuscleGroupChange}
           filters={filters}

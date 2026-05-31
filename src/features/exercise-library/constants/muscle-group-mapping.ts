@@ -6,10 +6,15 @@ import type { MuscleSlug } from "@/features/home/types/dashboard";
  */
 export const MUSCLE_GROUP_MAPPING: Record<string, MuscleSlug[]> = {
   chest: ["chest"],
+
   back: ["upper-back", "lower-back", "trapezius"],
-  shoulders: ["deltoids", "neck"],
-  arms: ["biceps", "triceps", "forearm", "hands"],
+
+  shoulders: ["deltoids"],
+
+  arms: ["biceps", "triceps", "forearm"],
+
   core: ["abs", "obliques"],
+
   legs: [
     "quadriceps",
     "hamstring",
@@ -17,9 +22,6 @@ export const MUSCLE_GROUP_MAPPING: Record<string, MuscleSlug[]> = {
     "calves",
     "adductors",
     "tibialis",
-    "knees",
-    "ankles",
-    "feet",
   ],
 };
 
@@ -29,24 +31,24 @@ export const MUSCLE_GROUP_MAPPING: Record<string, MuscleSlug[]> = {
  */
 export const ALL_BODY_PARTS: MuscleSlug[] = [
   "chest",
+
   "upper-back",
   "lower-back",
   "trapezius",
+
   "deltoids",
-  "neck",
+
   "biceps",
   "triceps",
   "forearm",
-  "hands",
+
   "abs",
   "obliques",
+
   "quadriceps",
   "hamstring",
   "gluteal",
   "calves",
   "adductors",
   "tibialis",
-  "knees",
-  "ankles",
-  "feet",
-] as const;
+];

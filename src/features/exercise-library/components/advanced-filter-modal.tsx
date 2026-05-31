@@ -1,29 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { FilterTag } from "@/components/ui/filter-tag";
 import type { MuscleSlug } from "@/features/home/types/dashboard";
+import {
+  CATEGORY_OPTIONS,
+  DIFFICULTY_OPTIONS,
+} from "../constants/filter-constants";
 import { ALL_BODY_PARTS } from "../constants/muscle-group-mapping";
 import { IExerciseFilterParams } from "../hooks/use-exercises-filter";
+import { IExercise } from "../types/exercise";
 
 interface IAdvancedFilterModalProps {
   visible: boolean;
+  exercises: IExercise[];
   filters: IExerciseFilterParams;
   onFiltersChange: (filters: IExerciseFilterParams) => void;
   onClose: () => void;
 }
 
-const DIFFICULTY_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
-const CATEGORY_OPTIONS = ["Strength", "Cardio", "Stretching", "Plyometric"];
-
 export default function AdvancedFilterModal({
   visible,
+  exercises,
   filters,
   onFiltersChange,
   onClose,
 }: IAdvancedFilterModalProps) {
   const [localFilters, setLocalFilters] =
     useState<IExerciseFilterParams>(filters);
+
+  // Sync localFilters when parent filters change or modal opens/closes
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters, visible]);
 
   const handleBodyPartToggle = (bodyPart: MuscleSlug) => {
     const bodyParts = localFilters.bodyParts || [];
@@ -118,13 +127,12 @@ export default function AdvancedFilterModal({
             </Text>
             <View className="flex-row flex-wrap gap-2">
               {DIFFICULTY_OPTIONS.map((difficulty) => (
-                <View key={difficulty} className="w-[31%] my-1.5">
-                  <FilterTag
-                    label={difficulty}
-                    checked={localFilters.difficulty === difficulty}
-                    onChange={() => handleDifficultyToggle(difficulty)}
-                  />
-                </View>
+                <FilterTag
+                  key={difficulty}
+                  label={difficulty}
+                  checked={localFilters.difficulty === difficulty}
+                  onChange={() => handleDifficultyToggle(difficulty)}
+                />
               ))}
             </View>
           </View>
@@ -138,13 +146,12 @@ export default function AdvancedFilterModal({
             </Text>
             <View className="flex-row flex-wrap gap-2">
               {CATEGORY_OPTIONS.map((category) => (
-                <View key={category} className="w-[31%] my-1.5">
-                  <FilterTag
-                    label={category}
-                    checked={localFilters.category === category}
-                    onChange={() => handleCategoryToggle(category)}
-                  />
-                </View>
+                <FilterTag
+                  key={category}
+                  label={category}
+                  checked={localFilters.category === category}
+                  onChange={() => handleCategoryToggle(category)}
+                />
               ))}
             </View>
           </View>
