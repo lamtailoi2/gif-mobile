@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GIFColors } from '@/constants/theme';
 import { useAuthLoading } from '@/context/auth-loading-context';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignIn, useSSO } from '@clerk/expo';
 import { FontAwesome } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -20,25 +20,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
+import { SignInForm, signInSchema } from '../libs/schema';
 
-const signInSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address'),
-  password: z
-    .string()
-    .min(1, 'Password is required'),
-});
 
-type SignInForm = z.infer<typeof signInSchema>;
 
 export const SignIn = () => {
   const router = useRouter();
   const [apiError, setApiError] = useState('');
   const [loadingAction, setLoadingAction] = useState<'email' | 'google' | null>(null);
-
   const { isLoading, setLoading } = useAuthLoading();
   const { signIn } = useSignIn();
   const { startSSOFlow } = useSSO();
@@ -87,6 +76,7 @@ export const SignIn = () => {
       const { error: finalizeError } = await signIn.finalize();
       if (finalizeError) {
         setApiError(finalizeError.longMessage ?? finalizeError.message ?? 'Sign in failed');
+        return;
       }
     } catch (err: any) {
       setApiError(err?.errors?.[0]?.longMessage ?? err?.message ?? 'Sign in failed');
