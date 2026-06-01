@@ -85,7 +85,7 @@ export default function MuscleGroupFilter({
             </View>
             <MaterialIcons
               name={
-                showMuscleGroups ? "keyboard-arrow-up" : "keyboard-arrow-down"
+                showMuscleGroups ? "keyboard-arrow-down" : "keyboard-arrow-up"
               }
               size={22}
               color="#759a04"
