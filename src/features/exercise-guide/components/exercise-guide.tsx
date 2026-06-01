@@ -162,10 +162,10 @@ export default function ExerciseGuideScreen({
                 >
                   <View className="p-4 gap-2">
                     <View className="flex-row items-center gap-3">
-                      <Text className="text-label-caps text-primary-fixed-dim font-bold">
+                      <Text className="text-body-md text-primary-fixed-dim font-bold">
                         {String(step.step).padStart(2, "0")}
                       </Text>
-                      <Text className="text-body-md font-bold text-on-surface flex-1">
+                      <Text className="text-body-lg font-bold text-on-surface flex-1">
                         {step.title}
                       </Text>
                     </View>
@@ -207,7 +207,7 @@ export default function ExerciseGuideScreen({
                     }
                   />
                   <View className="flex-1">
-                    <Text className="text-body-md font-bold text-on-surface">
+                    <Text className="text-body-lg font-bold text-on-surface">
                       {mistake.title}
                     </Text>
                     <Text className="text-body-md text-on-surface-variant mt-1">
@@ -230,42 +230,53 @@ export default function ExerciseGuideScreen({
               </Text>
             </View>
 
-            <View className="gap-2">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-3 pr-gutter"
+            >
               {guide.alternatives.map((alt, idx) => (
                 <View
                   key={idx}
-                  className="glass-card p-4 rounded-xl gap-2 bg-surface-container/40 border border-white/10"
+                  className="glass-card w-[280px] rounded-xl bg-surface-container/40 border border-white/10 overflow-hidden"
                 >
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-body-md font-bold text-on-surface flex-1">
-                      {alt.name}
-                    </Text>
-                    <View
-                      className={`px-3 py-1.5 rounded-full border ${
-                        alt.type === "easier"
-                          ? "bg-[#abd600] border-[#d4ff5e]"
-                          : alt.type === "harder"
-                            ? "bg-[#ff5252] border-[#ff8a80]"
-                            : "bg-[#4b8eff] border-[#82b1ff]"
-                      }`}
-                    >
-                      <Text
-                        className={`text-[11px] font-black uppercase tracking-widest ${
-                          alt.type === "easier"
-                            ? "text-[#283500]"
-                            : "text-white"
+                  <Image
+                    source={{ uri: alt.picture }}
+                    className="w-full h-28"
+                    resizeMode="cover"
+                  />
+                  <View className="p-4 gap-2">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-body-md font-bold text-on-surface flex-1">
+                        {alt.name}
+                      </Text>
+                      <View
+                        className={`px-3 py-1.5 rounded-full border ${
+                          alt.difficulty === "beginner"
+                            ? "bg-[#abd600] border-[#d4ff5e]"
+                            : alt.difficulty === "intermediate"
+                              ? "bg-[#ff5722] border-[#ff8a80]"
+                              : "bg-[#f44336] border-[#f44336]"
                         }`}
                       >
-                        {alt.type}
-                      </Text>
+                        <Text
+                          className={`text-[11px] font-black uppercase tracking-widest ${
+                            alt.difficulty === "beginner"
+                              ? "text-[#283500]"
+                              : "text-white"
+                          }`}
+                        >
+                          {alt.difficulty}
+                        </Text>
+                      </View>
                     </View>
+                    <Text className="text-body-md text-on-surface-variant">
+                      {alt.description}
+                    </Text>
                   </View>
-                  <Text className="text-body-md text-on-surface-variant">
-                    {alt.description}
-                  </Text>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
       </ScrollView>

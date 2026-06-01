@@ -51,19 +51,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Leg Press",
-        description: "Machine-based alternative with less stability demand.",
-        type: "easier",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter alternative for beginner progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Pause Squat",
-        description: "Extended time under tension builds strength.",
-        type: "harder",
+        name: "Deadlift",
+        picture:
+          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+        description: "Advanced compound lift for maximum strength gains.",
+        difficulty: "advanced",
       },
       {
-        name: "Bodyweight Squat",
-        description: "Perfect for home workouts and mobility.",
-        type: "home",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Bodyweight exercise for home training.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -115,18 +121,24 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     alternatives: [
       {
         name: "Lat Pulldown Machine",
-        description: "Assisted version that allows progression building.",
-        type: "easier",
+        picture:
+          "https://plus.unsplash.com/premium_photo-1663134074947-add456546c0f?q=80&w=1157&auto=format&fit=crop",
+        description: "Machine-based alternative with assisted progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Weighted Pull-ups",
-        description: "Add weight belt for increased difficulty.",
-        type: "harder",
+        name: "Deadlift",
+        picture:
+          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+        description: "Advanced compound for maximum back strength.",
+        difficulty: "advanced",
       },
       {
-        name: "Resistance Band Pull-ups",
-        description: "Use bands for assisted pull-ups at home.",
-        type: "home",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Bodyweight-friendly alternative at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -177,19 +189,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Assisted Lat Pulldown",
-        description: "Machine with assist for lighter loads.",
-        type: "easier",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter isolation exercise for easier progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Single-Arm Pulldown",
-        description: "Increases stability demand and unilateral strength.",
-        type: "harder",
+        name: "Barbell Row",
+        picture:
+          "https://thumbs.dreamstime.com/b/barbell-row-back-workout-athletic-man-doing-gym-71428479.jpg?w=576",
+        description: "Intermediate compound movement for more challenge.",
+        difficulty: "intermediate",
       },
       {
-        name: "Resistance Band Lat Pulldown",
-        description: "Home-friendly version using bands.",
-        type: "home",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Home-friendly isolation for back work.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -240,19 +258,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Dumbbell Row",
-        description: "Single-arm variation for unilateral strength.",
-        type: "easier",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter isolation for easier progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Deficit Barbell Row",
-        description: "Increased range of motion for greater gains.",
-        type: "harder",
+        name: "Deadlift",
+        picture:
+          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+        description: "Advanced compound for maximum back strength.",
+        difficulty: "advanced",
       },
       {
-        name: "Inverted Row (Bodyweight)",
-        description: "Home-friendly alternative using a bar.",
-        type: "home",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Bodyweight-friendly back exercise at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -303,19 +327,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Dumbbell Bench Press",
-        description: "Greater range of motion and stabilizer focus.",
-        type: "easier",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter bodyweight alternative for easier progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Pause Bench Press",
-        description: "Builds explosive power from a dead stop.",
-        type: "harder",
+        name: "Deadlift",
+        picture:
+          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+        description: "Advanced compound for maximum chest and tricep gains.",
+        difficulty: "advanced",
       },
       {
-        name: "Floor Press (Dumbbells)",
-        description: "Limits range of motion for shoulder safety.",
-        type: "home",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Perfect bodyweight chest exercise at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -366,19 +396,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Wall Push-up",
-        description: "Easier regression for beginners.",
-        type: "easier",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter isolation exercise for progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Diamond Push-up",
-        description: "Increased difficulty with hand placement.",
-        type: "harder",
+        name: "Bench Press",
+        picture:
+          "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
+        description: "Intermediate chest compound for more challenge.",
+        difficulty: "intermediate",
       },
       {
-        name: "Incline Push-up",
-        description: "Hands elevated for easier variation.",
-        type: "home",
+        name: "Plank",
+        picture:
+          "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+        description: "Core-focused bodyweight exercise at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -429,19 +465,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Trap Bar Deadlift",
-        description: "Reduces lower back strain with neutral grip.",
-        type: "easier",
+        name: "Barbell Row",
+        picture:
+          "https://thumbs.dreamstime.com/b/barbell-row-back-workout-athletic-man-doing-gym-71428479.jpg?w=576",
+        description: "Intermediate compound for easier progression.",
+        difficulty: "intermediate",
       },
       {
-        name: "Deficit Deadlift",
-        description: "Increases range of motion for greater gains.",
-        type: "harder",
+        name: "Barbell Squat",
+        picture:
+          "https://images.unsplash.com/photo-1654906546323-ceb7ee0d699b?q=80&w=764&auto=format&fit=crop",
+        description: "Advanced compound for maximum lower body gains.",
+        difficulty: "advanced",
       },
       {
-        name: "Romanian Deadlift",
-        description: "Home-friendly posterior chain emphasis.",
-        type: "home",
+        name: "Plank",
+        picture:
+          "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+        description: "Bodyweight core exercise for home training.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -492,19 +534,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Machine Shoulder Press",
-        description: "Reduced stability demand for easier pressing.",
-        type: "easier",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter isolation for easier shoulder progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Barbell Shoulder Press",
-        description: "Increased stability requirement for greater challenge.",
-        type: "harder",
+        name: "Deadlift",
+        picture:
+          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+        description: "Advanced compound for maximum shoulder strength.",
+        difficulty: "advanced",
       },
       {
-        name: "Pike Push-up",
-        description: "Bodyweight shoulder press variation at home.",
-        type: "home",
+        name: "Push Up",
+        picture:
+          "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=1200&auto=format&fit=crop",
+        description: "Bodyweight shoulder press at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -555,19 +603,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Barbell Curl",
-        description: "Heavier loading with bilateral movement.",
-        type: "easier",
+        name: "Plank",
+        picture:
+          "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter core exercise for easier progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Single-Arm Dumbbell Curl",
-        description: "Unilateral focus for strength balance.",
-        type: "harder",
+        name: "Dumbbell Shoulder Press",
+        picture:
+          "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=1200&auto=format&fit=crop",
+        description: "Intermediate compound for greater challenge.",
+        difficulty: "intermediate",
       },
       {
-        name: "Resistance Band Curl",
-        description: "Home-friendly portable alternative.",
-        type: "home",
+        name: "Plank",
+        picture:
+          "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+        description: "Perfect bodyweight core at home.",
+        difficulty: "beginner",
       },
     ],
   },
@@ -618,19 +672,25 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
     alternatives: [
       {
-        name: "Wall Plank",
-        description: "Hands on wall for easier regression.",
-        type: "easier",
+        name: "Bicep Curl",
+        picture:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+        description: "Lighter isolation exercise for progression.",
+        difficulty: "beginner",
       },
       {
-        name: "Side Plank",
-        description: "Unilateral variation targeting obliques.",
-        type: "harder",
+        name: "Barbell Row",
+        picture:
+          "https://thumbs.dreamstime.com/b/barbell-row-back-workout-athletic-man-doing-gym-71428479.jpg?w=576",
+        description: "Intermediate compound for greater challenge.",
+        difficulty: "intermediate",
       },
       {
-        name: "Wall Sit",
-        description: "Bodyweight leg and core exercise at home.",
-        type: "home",
+        name: "Plank",
+        picture:
+          "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+        description: "Core-focused bodyweight exercise at home.",
+        difficulty: "beginner",
       },
     ],
   },

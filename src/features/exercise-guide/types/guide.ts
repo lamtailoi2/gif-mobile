@@ -14,8 +14,9 @@ export interface IMistake {
 
 export interface IAlternativeExercise {
   name: string;
+  picture: string;
   description: string;
-  type: "easier" | "harder" | "home";
+  difficulty: "beginner" | "intermediate" | "advanced";
 }
 
 export interface IExerciseGuide {
