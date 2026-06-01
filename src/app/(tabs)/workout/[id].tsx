@@ -1,4 +1,4 @@
-import ExerciseGuide from "@/features/exercise-library/components/exercise-guide";
+import ExerciseGuide from "@/features/exercise-guide/components/exercise-guide";
 import { IExercise } from "@/features/exercise-library/types/exercise";
 import { useLocalSearchParams } from "expo-router";
 

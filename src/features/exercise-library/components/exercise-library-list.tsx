@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
 import { useTheme } from "@/hooks/use-theme";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { MuscleGroup } from "../constants/filter-constants";
 import {
   IExerciseFilterParams,
@@ -29,7 +30,7 @@ export default function ExerciseLibraryList({
   const [filters, setFilters] = useState<IExerciseFilterParams>({});
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup>();
   const [searchQuery, setSearchQuery] = useState("");
-
+  const tabBarHeight = useBottomTabBarHeight();
   const theme = useTheme();
 
   // Apply filters first
@@ -109,6 +110,7 @@ export default function ExerciseLibraryList({
 
       {/* List */}
       <FlatList
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 5 }}
         data={filtered}
         renderItem={({ item }) => (
           <ExerciseCard exercise={item} onPress={onExercisePress} />

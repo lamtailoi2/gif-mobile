@@ -2,11 +2,19 @@ import { useDifficultyTone } from "@/hooks/use-difficulty-tone";
 import { useTheme } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, Text, View , Linking } from "react-native";
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { IExercise } from "@/features/exercise-library/types/exercise";
 
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { getExerciseGuide } from "../constants/exercise-guides";
 import MuscleVisualization from "./muscle-visualization";
 
@@ -23,6 +31,7 @@ export default function ExerciseGuideScreen({
   const guide = getExerciseGuide(exercise.id);
 
   const difficultyTone = useDifficultyTone(exercise.difficulty);
+  const tabBarHeight = useBottomTabBarHeight();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -39,6 +48,7 @@ export default function ExerciseGuideScreen({
       <ScrollView
         contentContainerClassName="px-gutter pb-stack-lg gap-stack-md"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 10 }}
       >
         {/* Hero Image */}
         {exercise.thumbnailUrl ? (
@@ -235,7 +245,7 @@ export default function ExerciseGuideScreen({
                         alt.type === "easier"
                           ? "bg-[#abd600] border-[#d4ff5e]"
                           : alt.type === "harder"
-                            ? "bg-[#ff5252] border-[#f8a80]"
+                            ? "bg-[#ff5252] border-[#ff8a80]"
                             : "bg-[#4b8eff] border-[#82b1ff]"
                       }`}
                     >
