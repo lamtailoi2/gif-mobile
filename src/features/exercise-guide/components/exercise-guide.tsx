@@ -1,18 +1,21 @@
 import { useDifficultyTone } from "@/hooks/use-difficulty-tone";
 import { useTheme } from "@/hooks/use-theme";
+import { getYoutubeVideoId } from "@/lib/get-youtube-video-id";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
   Image,
-  Linking,
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
+import YoutubePlayer from "react-native-youtube-iframe";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { IExercise } from "@/features/exercise-library/types/exercise";
+import { Spacing } from "@/constants/theme";
 
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { getExerciseGuide } from "../constants/exercise-guides";
@@ -33,6 +36,13 @@ export default function ExerciseGuideScreen({
   const difficultyTone = useDifficultyTone(exercise.difficulty);
   const tabBarHeight = useBottomTabBarHeight();
 
+  const { width } = useWindowDimensions();
+  const playerWidth = width - Spacing.gutter * 2;
+  const playerHeight = playerWidth * (9 / 16);
+  const videoId = exercise.instructionUrl
+    ? getYoutubeVideoId(exercise.instructionUrl)
+    : undefined;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Back Button */}
@@ -50,29 +60,22 @@ export default function ExerciseGuideScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: tabBarHeight + 10 }}
       >
-        {/* Hero Image */}
-        {exercise.thumbnailUrl ? (
-          <Pressable
-            onPress={() => {
-              if (exercise.instructionUrl) {
-                Linking.openURL(exercise.instructionUrl);
-              }
-            }}
-            className="w-full aspect-video overflow-hidden rounded-xl border border-surface-variant/25 relative"
-          >
-            <Image
-              source={{ uri: exercise.thumbnailUrl }}
-              className="w-full h-full"
-              resizeMode="cover"
+        {/* Hero Video */}
+        {videoId ? (
+          <View className="w-full aspect-video overflow-hidden rounded-xl border border-surface-variant/25">
+            <YoutubePlayer
+              videoId={videoId}
+              height={playerHeight}
+              width={playerWidth}
+              play={false}
             />
-
-            {/* Play Overlay */}
-            <View className="absolute inset-0 items-center justify-center bg-black/30">
-              <View className="w-16 h-16 rounded-full bg-black/60 items-center justify-center">
-                <MaterialIcons name="play-arrow" size={40} color="white" />
-              </View>
-            </View>
-          </Pressable>
+          </View>
+        ) : exercise.thumbnailUrl ? (
+          <Image
+            source={{ uri: exercise.thumbnailUrl }}
+            className="w-full aspect-video rounded-xl border border-surface-variant/25"
+            resizeMode="cover"
+          />
         ) : null}
 
         {/* Title & Metadata */}
