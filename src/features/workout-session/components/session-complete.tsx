@@ -2,7 +2,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useSaveWorkoutSession } from "@/features/workout-session/hooks/use-save-workout-session";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ export default function SessionComplete() {
   const router = useRouter();
   const theme = useTheme();
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
+  const isSavingRef = useRef(false);
 
 
   const [energyLevel, setEnergyLevel] = useState<"drained" | "steady" | "charged">("steady");
@@ -392,6 +393,8 @@ export default function SessionComplete() {
         <Pressable
           disabled={isPending}
           onPress={() => {
+            if (isSavingRef.current || isPending) return;
+            isSavingRef.current = true;
             saveSession(
               {
                 completedAt: new Date().toISOString(),
@@ -401,11 +404,13 @@ export default function SessionComplete() {
               },
               {
                 onSuccess: () => router.replace("/(tabs)"),
-                onError: () =>
+                onError: () => {
+                  isSavingRef.current = false;
                   Alert.alert(
                     "Save Failed",
                     "Could not save your session. Please try again."
-                  ),
+                  );
+                },
               }
             );
           }}
