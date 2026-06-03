@@ -27,7 +27,6 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-type SignInForm = z.infer<typeof signInSchema>;
 
 export const SignIn = () => {
   const router = useRouter();

@@ -3,9 +3,9 @@ import { AuthLoadingOverlay } from '@/components/auth-loading-overlay';
 import { AuthLoadingProvider, useAuthLoading } from '@/context/auth-loading-context';
 import { useAuth } from "@clerk/expo";
 import { Redirect, Stack } from "expo-router";
-import { View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
+import { View } from "react-native";
 
 export const useWarmUpBrowser = () => {
     useEffect(() => {
