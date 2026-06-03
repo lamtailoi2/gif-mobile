@@ -1,4 +1,3 @@
-import ExerciseGuide from "@/features/exercise-library/components/exercise-guide";
 import { IExercise } from "@/features/exercise-library/types/exercise";
 import { useLocalSearchParams } from "expo-router";
 
@@ -41,7 +40,7 @@ export default function ExerciseDetailsScreen() {
       defaultReps: parseInt(params.defaultReps as string, 10) || 10,
     };
 
-    return <ExerciseGuide exercise={exercise} />;
+    // return <ExerciseGuide exercise={exercise} />;
   } catch (error) {
     console.error("Error parsing exercise params:", error);
     console.error("Params received:", params);
