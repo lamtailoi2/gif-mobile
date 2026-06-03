@@ -19,6 +19,18 @@ export default function WorkoutLayout() {
           title: "Exercise Details",
         }}
       />
+      <Stack.Screen
+        name="active-session"
+        options={{
+          title: "Active Session",
+        }}
+      />
+      <Stack.Screen
+        name="session-complete"
+        options={{
+          title: "Session Complete",
+        }}
+      />
     </Stack>
   );
 }
