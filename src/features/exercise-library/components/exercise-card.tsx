@@ -1,3 +1,4 @@
+import { useDifficultyTone } from "@/hooks/use-difficulty-tone";
 import { useTheme } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
@@ -18,24 +19,7 @@ export default function ExerciseCard({
     ? exercise.equipment.join(", ")
     : exercise.equipment || "Equipment";
 
-  const difficultyTone =
-    exercise.difficulty === "Advanced"
-      ? {
-          bg: "bg-error/20",
-          border: "border-error/40",
-          text: "text-error",
-        }
-      : exercise.difficulty === "Intermediate"
-        ? {
-            bg: "bg-outline-variant/20",
-            border: "border-outline-variant/40",
-            text: "text-on-surface-variant",
-          }
-        : {
-            bg: "bg-primary-fixed-dim/20",
-            border: "border-primary-fixed-dim/40",
-            text: "text-primary-fixed-dim",
-          };
+  const difficultyTone = useDifficultyTone(exercise.difficulty);
 
   return (
     <Pressable
