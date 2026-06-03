@@ -10,17 +10,9 @@ export default function WorkoutScreen() {
 
   const handleExercisePress = (exercise: IExercise) => {
     router.push({
-      pathname: "../(tabs)/workout/[id]",
+      pathname: "/workout/guide/[id]",
       params: {
         id: exercise.id,
-        name: exercise.name,
-        slug: exercise.slug || "",
-        category: exercise.category,
-        difficulty: exercise.difficulty,
-        muscleGroups: JSON.stringify(exercise.muscleGroups),
-        equipment: JSON.stringify(exercise.equipment),
-        defaultReps: String(exercise.defaultReps),
-        thumbnailUrl: exercise.thumbnailUrl || "",
       },
     });
   };

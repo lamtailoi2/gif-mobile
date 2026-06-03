@@ -1,4 +1,5 @@
-import { useAuth } from "@clerk/expo";
+import { getNextOnboardingStep } from "@/lib/profile";
+import { useAuth, useUser } from "@clerk/expo";
 import { Redirect, Tabs, usePathname } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
@@ -8,8 +9,8 @@ const SESSION_ROUTES = ["active-session", "session-complete"];
 
 export default function TabLayout() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const pathname = usePathname();
-
   const isSessionScreen = SESSION_ROUTES.some((route) =>
     pathname.includes(route)
   );
@@ -24,6 +25,14 @@ export default function TabLayout() {
 
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  const onboardingStep = getNextOnboardingStep(user);
+  if (onboardingStep === "profile") {
+    return <Redirect href="/(onboarding)/setup-profile" />;
+  }
+  if (onboardingStep === "goal") {
+    return <Redirect href="/(onboarding)/setup-goal" />;
   }
 
   const tabBarStyle = isSessionScreen

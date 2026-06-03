@@ -1,15 +1,15 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { GIFColors } from '@/constants/theme';
-import { useAuthLoading } from '@/context/auth-loading-context';
-import { useSignIn, useSSO } from '@clerk/expo';
-import { FontAwesome } from '@expo/vector-icons';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Image } from 'expo-image';
-import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { GIFColors } from "@/constants/theme";
+import { useAuthLoading } from "@/context/auth-loading-context";
+import { useSignIn, useSSO } from "@clerk/expo";
+import { FontAwesome } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Image } from "expo-image";
+import * as Linking from "expo-linking";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -18,16 +18,23 @@ import {
   ScrollView,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { SignInForm, signInSchema } from '../libs/schema';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
 
+const signInSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 
 export const SignIn = () => {
   const router = useRouter();
-  const [apiError, setApiError] = useState('');
-  const [loadingAction, setLoadingAction] = useState<'email' | 'google' | null>(null);
+  const [apiError, setApiError] = useState("");
+  const [loadingAction, setLoadingAction] = useState<"email" | "google" | null>(
+    null,
+  );
+
   const { isLoading, setLoading } = useAuthLoading();
   const { signIn } = useSignIn();
   const { startSSOFlow } = useSSO();
@@ -38,24 +45,28 @@ export const SignIn = () => {
     formState: { errors },
   } = useForm<SignInForm>({
     resolver: zodResolver(signInSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   const onGooglePress = async () => {
     if (isLoading) return;
-    setApiError('');
-    setLoadingAction('google');
+    setApiError("");
+    setLoadingAction("google");
     setLoading(true);
     try {
       const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: 'oauth_google',
-        redirectUrl: Linking.createURL('/'),
+        strategy: "oauth_google",
+        redirectUrl: Linking.createURL("/"),
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
       }
     } catch (err: any) {
-      setApiError(err?.errors?.[0]?.longMessage ?? err?.message ?? 'Google sign-in failed');
+      setApiError(
+        err?.errors?.[0]?.longMessage ??
+          err?.message ??
+          "Google sign-in failed",
+      );
     } finally {
       setLoadingAction(null);
       setLoading(false);
@@ -64,22 +75,32 @@ export const SignIn = () => {
 
   const onSignIn = async (data: SignInForm) => {
     if (!signIn || isLoading) return;
-    setApiError('');
-    setLoadingAction('email');
+    setApiError("");
+    setLoadingAction("email");
     setLoading(true);
     try {
-      const { error: createError } = await signIn.create({ identifier: data.email, password: data.password });
+      const { error: createError } = await signIn.create({
+        identifier: data.email,
+        password: data.password,
+      });
       if (createError) {
-        setApiError(createError.longMessage ?? createError.message ?? 'Sign in failed');
+        setApiError(
+          createError.longMessage ?? createError.message ?? "Sign in failed",
+        );
         return;
       }
       const { error: finalizeError } = await signIn.finalize();
       if (finalizeError) {
-        setApiError(finalizeError.longMessage ?? finalizeError.message ?? 'Sign in failed');
-        return;
+        setApiError(
+          finalizeError.longMessage ??
+            finalizeError.message ??
+            "Sign in failed",
+        );
       }
     } catch (err: any) {
-      setApiError(err?.errors?.[0]?.longMessage ?? err?.message ?? 'Sign in failed');
+      setApiError(
+        err?.errors?.[0]?.longMessage ?? err?.message ?? "Sign in failed",
+      );
     } finally {
       setLoadingAction(null);
       setLoading(false);
@@ -90,15 +111,17 @@ export const SignIn = () => {
     <View className="flex-1 bg-background">
       <View
         className="absolute top-0 left-0 right-0 h-[420px]"
-        style={{
-          experimental_backgroundImage:
-            'radial-gradient(circle at 50% 0%, rgba(171,214,0,0.1) 0%, rgba(19,19,19,1) 65%)',
-        } as object}
+        style={
+          {
+            experimental_backgroundImage:
+              "radial-gradient(circle at 50% 0%, rgba(171,214,0,0.1) 0%, rgba(19,19,19,1) 65%)",
+          } as object
+        }
       />
 
       <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
         >
           <ScrollView
@@ -110,7 +133,7 @@ export const SignIn = () => {
             <View className="items-center mb-8">
               <View className="w-[100px] h-[100px] rounded-full overflow-hidden mb-4 border border-neon-green/30">
                 <Image
-                  source={require('@/assets/images/icon.png')}
+                  source={require("@/assets/images/icon.png")}
                   style={{ width: 100, height: 100 }}
                   contentFit="cover"
                 />
@@ -134,7 +157,9 @@ export const SignIn = () => {
 
               {!!apiError && (
                 <View className="bg-error-container/25 border border-error rounded-md py-2.5 px-3.5">
-                  <Text className="font-body text-sm text-error text-center">{apiError}</Text>
+                  <Text className="font-body text-sm text-error text-center">
+                    {apiError}
+                  </Text>
                 </View>
               )}
 
@@ -158,7 +183,9 @@ export const SignIn = () => {
                     )}
                   />
                   {errors.email && (
-                    <Text className="font-body text-xs text-error ml-1">{errors.email.message}</Text>
+                    <Text className="font-body text-xs text-error ml-1">
+                      {errors.email.message}
+                    </Text>
                   )}
                 </View>
 
@@ -179,31 +206,46 @@ export const SignIn = () => {
                     )}
                   />
                   {errors.password && (
-                    <Text className="font-body text-xs text-error ml-1">{errors.password.message}</Text>
+                    <Text className="font-body text-xs text-error ml-1">
+                      {errors.password.message}
+                    </Text>
                   )}
                 </View>
               </View>
 
               <Button onPress={handleSubmit(onSignIn)} disabled={isLoading}>
-                {loadingAction === 'email' ? (
+                {loadingAction === "email" ? (
                   <ActivityIndicator size="small" color={GIFColors.onPrimary} />
                 ) : (
-                  'Sign In'
+                  "Sign In"
                 )}
               </Button>
 
               <View className="flex-row items-center gap-3">
                 <View className="flex-1 h-px bg-outline-variant" />
-                <Text className="font-body text-xs text-on-surface-variant opacity-60">or</Text>
+                <Text className="font-body text-xs text-on-surface-variant opacity-60">
+                  or
+                </Text>
                 <View className="flex-1 h-px bg-outline-variant" />
               </View>
 
-              <Button onPress={onGooglePress} variant="outline" disabled={isLoading}>
-                {loadingAction === 'google' ? (
-                  <ActivityIndicator size="small" color={GIFColors.electricBlue} />
+              <Button
+                onPress={onGooglePress}
+                variant="outline"
+                disabled={isLoading}
+              >
+                {loadingAction === "google" ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={GIFColors.electricBlue}
+                  />
                 ) : (
                   <View className="flex-row items-center gap-2.5">
-                    <FontAwesome name="google" size={16} color={GIFColors.electricBlue} />
+                    <FontAwesome
+                      name="google"
+                      size={16}
+                      color={GIFColors.electricBlue}
+                    />
                     <Text className="font-body text-base font-semibold text-electric-blue">
                       Continue with Google
                     </Text>
@@ -212,13 +254,15 @@ export const SignIn = () => {
               </Button>
 
               <Pressable
-                onPress={() => router.push('/(auth)/sign-up')}
+                onPress={() => router.push("/(auth)/sign-up")}
                 disabled={isLoading}
                 className="items-center pt-1"
               >
                 <Text className="font-body text-sm text-on-surface-variant">
-                  {"Don't have an account?"}{' '}
-                  <Text className="text-electric-blue font-semibold">Sign up</Text>
+                  {"Don't have an account?"}{" "}
+                  <Text className="text-electric-blue font-semibold">
+                    Sign up
+                  </Text>
                 </Text>
               </Pressable>
             </View>

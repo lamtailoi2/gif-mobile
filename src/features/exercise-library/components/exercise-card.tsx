@@ -1,3 +1,4 @@
+import { useDifficultyTone } from "@/hooks/use-difficulty-tone";
 import { useTheme } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
@@ -8,31 +9,17 @@ interface IExerciseCardProps {
   onPress?: (exercise: IExercise) => void;
 }
 
-export default function ExerciseCard({ exercise, onPress }: IExerciseCardProps) {
+export default function ExerciseCard({
+  exercise,
+  onPress,
+}: IExerciseCardProps) {
   const theme = useTheme();
 
   const equipmentText = Array.isArray(exercise.equipment)
     ? exercise.equipment.join(", ")
     : exercise.equipment || "Equipment";
 
-  const difficultyTone =
-    exercise.difficulty === "Advanced"
-      ? {
-          bg: "bg-error/20",
-          border: "border-error/40",
-          text: "text-error",
-        }
-      : exercise.difficulty === "Intermediate"
-        ? {
-            bg: "bg-outline-variant/20",
-            border: "border-outline-variant/40",
-            text: "text-on-surface-variant",
-          }
-        : {
-            bg: "bg-primary-fixed-dim/20",
-            border: "border-primary-fixed-dim/40",
-            text: "text-primary-fixed-dim",
-          };
+  const difficultyTone = useDifficultyTone(exercise.difficulty);
 
   return (
     <Pressable
@@ -51,15 +38,15 @@ export default function ExerciseCard({ exercise, onPress }: IExerciseCardProps) 
 
         <View className="flex-1 flex-row items-start gap-gutter p-stack-md">
           <View className="flex-1 gap-1">
-            <Text className="text-[10px] font-bold uppercase tracking-[0.5px] mb-0.5 text-secondary-container">
+            <Text className="text-sm font-bold uppercase tracking-[0.5px] mb-0.5 text-secondary-container">
               {exercise.category}
             </Text>
 
-            <Text className="text-[15px] font-bold mb-0.5 text-on-surface">
+            <Text className="text-lg font-bold mb-0.5 text-on-surface">
               {exercise.name}
             </Text>
 
-            <Text className="text-xs mb-2 text-on-surface-variant">
+            <Text className="text-sm mb-2 text-on-surface-variant">
               {exercise.muscleGroups.join(", ")}
             </Text>
 
@@ -93,7 +80,7 @@ export default function ExerciseCard({ exercise, onPress }: IExerciseCardProps) 
               className={`px-2 py-1 rounded border ${difficultyTone.bg} ${difficultyTone.border}`}
             >
               <Text
-                className={`text-[9px] font-bold uppercase tracking-[0.5px] ${difficultyTone.text}`}
+                className={`text-sm font-bold uppercase tracking-[0.5px] ${difficultyTone.text}`}
               >
                 {exercise.difficulty}
               </Text>
