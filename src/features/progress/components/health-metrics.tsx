@@ -1,17 +1,22 @@
 // src/features/progress/components/health-metrics.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { IHealthMetrics } from '../types/progress';
 
-export const HealthMetrics = () => {
+interface IHealthMetricsProps {
+    data: IHealthMetrics;
+}
+
+export const HealthMetrics = ({ data }: IHealthMetricsProps) => {
     return (
         <View style={styles.row}>
             <View style={styles.card}>
                 <Text style={styles.label}>AVG HRV</Text>
-                <Text style={styles.value}>64 <Text style={styles.unit}>ms</Text></Text>
+                <Text style={styles.value}>{data.hrv} <Text style={styles.unit}>ms</Text></Text>
             </View>
             <View style={styles.card}>
                 <Text style={styles.label}>SLEEP SCORE</Text>
-                <Text style={styles.value}>82<Text style={styles.unit}>/100</Text></Text>
+                <Text style={styles.value}>{data.sleepScore}<Text style={styles.unit}>/100</Text></Text>
             </View>
         </View>
     );

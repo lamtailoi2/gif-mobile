@@ -1,17 +1,17 @@
+// src/features/progress/components/consistency-map.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
-const WEEKS = Array.from({ length: 18 }); // Giả lập 18 cột (tuần)
-const DAYS = Array.from({ length: 7 }); // 7 ngày trong tuần
+const WEEKS = Array.from({ length: 18 });
+const DAYS = Array.from({ length: 7 });
 
 export const ConsistencyMap = () => {
-    // Hàm random để tạo data giả lập hiển thị
     const getSquareColor = () => {
         const rand = Math.random();
-        if (rand > 0.8) return '#D4FF00'; // Xanh neon
-        if (rand > 0.6) return '#88AA00'; // Xanh lá đậm
-        return '#222222'; // Xám đen (không tập)
+        if (rand > 0.8) return '#D4FF00';
+        if (rand > 0.6) return '#88AA00';
+        return '#222222';
     };
 
     return (

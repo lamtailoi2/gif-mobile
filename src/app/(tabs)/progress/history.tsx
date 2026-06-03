@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { HistoryList } from '../features/history/components';
+import { HistoryList } from '../../../features/history/components';
 
 export default function HistoryScreen() {
     return (

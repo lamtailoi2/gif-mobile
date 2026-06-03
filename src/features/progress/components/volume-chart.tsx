@@ -1,3 +1,4 @@
+// src/features/progress/components/volume-chart.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -12,7 +13,6 @@ export const VolumeChart = () => {
                 <View style={styles.horizontalLine} />
                 <View style={styles.horizontalLine} />
 
-                {/* Giả lập đường Line Chart */}
                 <View style={styles.mockLineContainer}>
                     <View style={styles.mockLine} />
                 </View>

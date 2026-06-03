@@ -1,24 +1,19 @@
+// src/features/progress/components/recovery-chart.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { IRecoveryItem } from '../types/progress';
 
-const DATA = [
-    { day: 'M', recovery: 40, intensity: 60 },
-    { day: 'T', recovery: 80, intensity: 30 },
-    { day: 'W', recovery: 50, intensity: 70 },
-    { day: 'T', recovery: 30, intensity: 90 },
-    { day: 'F', recovery: 85, intensity: 45 },
-    { day: 'S', recovery: 70, intensity: 80 },
-    { day: 'S', recovery: 40, intensity: 20 },
-];
+interface IRecoveryChartProps {
+    data: IRecoveryItem[];
+}
 
-export const RecoveryChart = () => {
+export const RecoveryChart = ({ data }: IRecoveryChartProps) => {
     return (
         <View style={styles.card}>
             <Text style={styles.title}>Recovery vs Intensity</Text>
             <Text style={styles.subtitle}>7 Day Average</Text>
 
             <View style={styles.chartContainer}>
-                {/* Các đường gióng ngang */}
                 <View style={styles.gridLines}>
                     <View style={styles.horizontalLine} />
                     <View style={styles.horizontalLine} />
@@ -26,9 +21,8 @@ export const RecoveryChart = () => {
                     <View style={styles.horizontalLine} />
                 </View>
 
-                {/* Các cột biểu đồ */}
                 <View style={styles.barsArea}>
-                    {DATA.map((item, index) => (
+                    {data.map((item, index) => (
                         <View key={index} style={styles.dayColumn}>
                             <View style={styles.barGroup}>
                                 <View style={[styles.bar, styles.barRecovery, { height: `${item.recovery}%` }]} />
@@ -40,7 +34,6 @@ export const RecoveryChart = () => {
                 </View>
             </View>
 
-            {/* Chú thích (Legend) */}
             <View style={styles.legendContainer}>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#88AAFF' }]} />
