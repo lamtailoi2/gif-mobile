@@ -1,8 +1,11 @@
 import { useTheme } from "@/hooks/use-theme";
+import { useSaveWorkoutSession } from "@/features/workout-session/hooks/use-save-workout-session";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   GestureResponderEvent,
   Pressable,
   ScrollView,
@@ -15,6 +18,8 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 export default function SessionComplete() {
   const router = useRouter();
   const theme = useTheme();
+  const { mutate: saveSession, isPending } = useSaveWorkoutSession();
+  const isSavingRef = useRef(false);
 
 
   const [energyLevel, setEnergyLevel] = useState<"drained" | "steady" | "charged">("steady");
@@ -382,6 +387,50 @@ export default function SessionComplete() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Finish & Save CTA */}
+      <View className="px-container-mobile pb-stack-md pt-stack-sm border-t border-surface-variant/10">
+        <Pressable
+          disabled={isPending}
+          onPress={() => {
+            if (isSavingRef.current || isPending) return;
+            isSavingRef.current = true;
+            saveSession(
+              {
+                completedAt: new Date().toISOString(),
+                energyLevel,
+                intensityRating,
+                muscleBreakdown: selectedMuscles,
+              },
+              {
+                onSuccess: () => router.replace("/(tabs)"),
+                onError: () => {
+                  isSavingRef.current = false;
+                  Alert.alert(
+                    "Save Failed",
+                    "Could not save your session. Please try again."
+                  );
+                },
+              }
+            );
+          }}
+          className={`w-full flex-row items-center justify-center gap-3 py-5 rounded-2xl bg-neon-green active:opacity-85 active:scale-[0.98] ${
+            isPending ? "opacity-70" : ""
+          }`}
+          accessibilityLabel="Finish and save session"
+        >
+          {isPending ? (
+            <ActivityIndicator size="small" color="#0e0e0f" />
+          ) : (
+            <>
+              <Text className="font-display text-body-lg font-bold text-background tracking-wide">
+                {"Finish & Save"}
+              </Text>
+              <MaterialIcons name="check-circle" size={22} color="#0e0e0f" />
+            </>
+          )}
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
