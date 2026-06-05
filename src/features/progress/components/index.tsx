@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     historyButton: {
         backgroundColor: '#D4FF00',
         paddingVertical: 16,
-        paddingBottom: 100,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 10,
