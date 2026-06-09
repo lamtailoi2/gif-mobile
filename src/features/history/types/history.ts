@@ -13,11 +13,6 @@ export interface IWorkoutSession {
     caloriesBurned: number;
     exercisesCount: number;
     intensity: EIntensity;
+    type: string;
     muscleGroups: string[];
-}
-
-export interface IHistoryOverview {
-    totalWorkouts: number;
-    totalHours: number;
-    dayStreak: number;
 }

@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     title: { color: '#FFFFFF', fontSize: 28, fontWeight: 'bold', marginBottom: 4 },
     subtitle: { color: '#888888', fontSize: 14, marginBottom: 24 },
     historyButton: {
-        backgroundColor: '#D4FF00',
+        backgroundColor: '#d4ff00',
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: 'center',
