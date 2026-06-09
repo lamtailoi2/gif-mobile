@@ -1,49 +1,34 @@
-// src/features/history/apis/index.ts
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
-import { IHistoryOverview, IWorkoutSession } from '../types/history';
 
-// 1. Hàm lấy dữ liệu tổng quan
-export const getHistoryOverview = async (): Promise<IHistoryOverview> => {
-    try {
-        const docRef = doc(db, 'historyOverview', 'summary');
-        const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-            return docSnap.data() as IHistoryOverview;
-        } else {
-            return { totalWorkouts: 0, totalHours: 0, dayStreak: 0 };
-        }
-    } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu History Overview từ Firebase:', error);
-        throw error;
-    }
-};
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { db } from '../../../lib/firebase'; // Đảm bảo đúng đường dẫn db của bạn
+import { IWorkoutSession } from '../types/history';
 
-// 2. Hàm lấy danh sách buổi tập (Giữ nguyên của bạn)
-export const getWorkoutSessions = async (): Promise<IWorkoutSession[]> => {
+export const getWorkoutHistory = async (): Promise<IWorkoutSession[]> => {
     try {
         const sessionsRef = collection(db, 'workoutSessions');
-        const snapshot = await getDocs(sessionsRef);
+        // Sắp xếp ngày mới nhất lên đầu
+        const q = query(sessionsRef, orderBy('date', 'desc'));
+        const snapshot = await getDocs(q);
 
-        const sessions = snapshot.docs.map((docItem) => {
+        // RẤT QUAN TRỌNG: Bắt buộc phải có chữ "return" ở dòng này
+        return snapshot.docs.map((docItem) => {
             const data = docItem.data();
             return {
                 id: docItem.id,
-                title: data.title,
-                date: data.date,
-                time: data.time,
-                durationMinutes: data.durationMinutes,
-                caloriesBurned: data.caloriesBurned,
+                title: data.title || 'Untitled Workout',
+                date: data.date || '',
+                time: data.time || '',
+                durationMinutes: data.durationMinutes || 0,
+                caloriesBurned: data.caloriesBurned || 0,
                 exercisesCount: data.exercisesCount || 0,
-                intensity: data.intensity,
+                intensity: data.intensity || 'NORMAL',
+                type: data.type || 'CUSTOM',
                 muscleGroups: data.muscleGroups || [],
             } as IWorkoutSession;
         });
-
-        return sessions;
     } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu Workout Sessions từ Firebase:', error);
-        throw error;
+        console.error('Lỗi lấy dữ liệu History:', error);
+        return [];
     }
 };
