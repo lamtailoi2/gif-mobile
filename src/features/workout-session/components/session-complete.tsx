@@ -1,8 +1,9 @@
 import { useTheme } from "@/hooks/use-theme";
 import { useSaveWorkoutSession } from "@/features/workout-session/hooks/use-save-workout-session";
+import { useWorkoutSessionStore } from "@/features/workout-session/store/use-workout-session-store";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,46 +16,141 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
+import { EnergyLevel } from "@/interfaces/workout-session.interface";
+
+// ── Icon mapping cho nhóm cơ ───────────────────────────────────────────────
+type MCIcon = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+
+const MUSCLE_ICONS: Record<string, MCIcon> = {
+  chest: "dumbbell",
+  back: "human",
+  shoulders: "weight-lifter",
+  arms: "arm-flex",
+  core: "human-handsup",
+  legs: "run",
+};
+
+const MUSCLE_LABELS: Record<string, string> = {
+  chest: "Chest",
+  back: "Back",
+  shoulders: "Shoulders",
+  arms: "Arms",
+  core: "Core",
+  legs: "Legs",
+};
+
+const ENERGY_OPTIONS: {
+  key: EnergyLevel;
+  icon: MCIcon;
+  label: string;
+  color: string;
+}[] = [
+  { key: "drained", icon: "battery-outline", label: "DRAINED", color: "#ffb4ab" },
+  { key: "steady", icon: "battery-medium", label: "STEADY", color: "#abd600" },
+  { key: "charged", icon: "flash", label: "CHARGED", color: "#abd600" },
+];
+
 export default function SessionComplete() {
   const router = useRouter();
   const theme = useTheme();
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
   const isSavingRef = useRef(false);
 
+  // ── Store data ─────────────────────────────────────────────────────────────
+  const { routine, exerciseLogs, sessionStartedAt, resetSession } =
+    useWorkoutSessionStore();
 
-  const [energyLevel, setEnergyLevel] = useState<"drained" | "steady" | "charged">("steady");
+  // ── Tính totalVolume từ exerciseLogs thực tế ──────────────────────────────
+  const totalVolume = useMemo(
+    () =>
+      exerciseLogs.reduce(
+        (acc, log) =>
+          acc + log.sets.reduce((s, set) => s + set.weight * set.reps, 0),
+        0
+      ),
+    [exerciseLogs]
+  );
 
-  const [intensityRating, setIntensityRating] = useState<number>(7);
-  const [sliderWidth, setSliderWidth] = useState<number>(0);
+  // ── Tính durationSec ──────────────────────────────────────────────────────
+  const durationSec = useMemo(() => {
+    if (!sessionStartedAt) return 0;
+    return Math.round(
+      (Date.now() - new Date(sessionStartedAt).getTime()) / 1000
+    );
+  }, [sessionStartedAt]);
 
+  const durationMin = Math.round(durationSec / 60);
 
-  const [selectedMuscles, setSelectedMuscles] = useState<Record<string, boolean>>({
-    chest: true,
-    back: false,
-    legs: false,
-    arms: false,
-  });
+  // ── Muscle breakdown — auto-populate từ routine.muscleGroups ─────────────
+  const availableMuscles: string[] = routine?.muscleGroups ?? [
+    "chest",
+    "back",
+    "legs",
+    "arms",
+  ];
+
+  const [selectedMuscles, setSelectedMuscles] = useState<
+    Record<string, boolean>
+  >(() =>
+    Object.fromEntries(availableMuscles.map((m) => [m, true]))
+  );
 
   const toggleMuscle = (muscle: string) => {
-    setSelectedMuscles((prev) => ({
-      ...prev,
-      [muscle]: !prev[muscle],
-    }));
+    setSelectedMuscles((prev) => ({ ...prev, [muscle]: !prev[muscle] }));
   };
 
+  // ── Session stats ─────────────────────────────────────────────────────────
+  const totalSets = exerciseLogs.reduce((acc, log) => acc + log.sets.length, 0);
+  const totalExercises = exerciseLogs.length;
+
+  // ── Intensity / Energy ────────────────────────────────────────────────────
+  const [energyLevel, setEnergyLevel] = useState<"drained" | "steady" | "charged">("steady");
+  const [intensityRating, setIntensityRating] = useState<number>(7);
+  const [sliderWidth, setSliderWidth] = useState<number>(0);
 
   const handleSliderTouch = (event: GestureResponderEvent) => {
     if (sliderWidth <= 0) return;
     const touchX = event.nativeEvent.locationX;
     const percentage = Math.max(0, Math.min(1, touchX / sliderWidth));
+    setIntensityRating(Math.round(percentage * 9) + 1);
+  };
 
-    const ratingValue = Math.round(percentage * 9) + 1;
-    setIntensityRating(ratingValue);
+  // ── Save ──────────────────────────────────────────────────────────────────
+  const handleSave = () => {
+    if (isSavingRef.current || isPending) return;
+    isSavingRef.current = true;
+
+    saveSession(
+      {
+        routineId: routine?.id ?? "",
+        routineName: routine?.name ?? "",
+        completedAt: new Date().toISOString(),
+        durationSec,
+        energyLevel,
+        intensityRating,
+        muscleBreakdown: selectedMuscles,
+        exerciseLogs,
+        totalVolume,
+      },
+      {
+        onSuccess: () => {
+          resetSession();
+          router.replace("/(tabs)");
+        },
+        onError: () => {
+          isSavingRef.current = false;
+          Alert.alert(
+            "Save Failed",
+            "Could not save your session. Please try again."
+          );
+        },
+      }
+    );
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-
+      {/* Header */}
       <View className="px-container-mobile py-stack-sm flex-row justify-between items-center border-b border-surface-variant/10">
         <Text className="font-display text-headline-lg-mobile font-bold text-neon-green">
           Session Complete
@@ -72,7 +168,7 @@ export default function SessionComplete() {
         contentContainerClassName="px-container-mobile pt-stack-sm pb-stack-lg gap-gutter"
         showsVerticalScrollIndicator={false}
       >
-
+        {/* Title */}
         <View className="gap-1 mt-stack-sm">
           <Text className="font-display text-headline-md font-bold text-on-surface">
             How was it?
@@ -82,23 +178,67 @@ export default function SessionComplete() {
           </Text>
         </View>
 
-
+        {/* Real Session Stats */}
         <View className="bg-surface-container/60 border border-surface-variant/25 rounded-xl p-stack-md gap-3 shadow-sm">
           <View className="flex-row items-center gap-2">
             <MaterialCommunityIcons name="cpu-64-bit" size={16} color="#abd600" />
             <Text className="font-mono text-label-caps text-neon-green tracking-[0.1em]">
-              AI SUMMARY
+              SESSION SUMMARY
             </Text>
           </View>
-          <Text className="font-body text-body-md text-on-surface leading-6">
-            Great session. Your chest volume increased by{" "}
-            <Text className="text-neon-green font-bold">12%</Text>. Recovery
-            predicted:{" "}
-            <Text className="text-electric-blue font-bold">48 hours</Text>.
-          </Text>
+          <View className="flex-row justify-between">
+            {/* Volume */}
+            <View className="items-center gap-1">
+              <Text className="font-display text-[22px] font-bold text-neon-green">
+                {totalVolume.toLocaleString()}
+              </Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">
+                TOTAL VOL (lbs)
+              </Text>
+            </View>
+            {/* Divider */}
+            <View className="w-px bg-surface-variant/20" />
+            {/* Sets */}
+            <View className="items-center gap-1">
+              <Text className="font-display text-[22px] font-bold text-electric-blue">
+                {totalSets}
+              </Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">
+                SETS
+              </Text>
+            </View>
+            {/* Divider */}
+            <View className="w-px bg-surface-variant/20" />
+            {/* Exercises */}
+            <View className="items-center gap-1">
+              <Text className="font-display text-[22px] font-bold text-on-surface">
+                {totalExercises}
+              </Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">
+                EXERCISES
+              </Text>
+            </View>
+            {/* Divider */}
+            <View className="w-px bg-surface-variant/20" />
+            {/* Duration */}
+            <View className="items-center gap-1">
+              <Text className="font-display text-[22px] font-bold text-on-surface">
+                {durationMin}
+              </Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">
+                MIN
+              </Text>
+            </View>
+          </View>
+          {/* Routine name */}
+          {routine && (
+            <Text className="font-body text-[12px] text-on-surface-variant/40 text-center">
+              {routine.name} · {routine.focus}
+            </Text>
+          )}
         </View>
 
-
+        {/* Energy Level */}
         <View className="gap-3 mt-stack-sm">
           <View className="flex-row justify-between items-baseline">
             <Text className="font-display text-body-lg font-bold text-on-surface">
@@ -108,83 +248,42 @@ export default function SessionComplete() {
               BIOMETRIC
             </Text>
           </View>
-
-
           <View className="flex-row gap-3">
-
-            <Pressable
-              onPress={() => setEnergyLevel("drained")}
-              className={`flex-1 items-center justify-center py-5 rounded-xl border bg-surface-container/40 ${energyLevel === "drained"
-                  ? "border-error/80 bg-surface-container-high"
-                  : "border-surface-variant/20"
-                } active:opacity-80`}
-            >
-              <MaterialCommunityIcons
-                name="battery-outline"
-                size={24}
-                color={energyLevel === "drained" ? "#ffb4ab" : "#ffb4ab/60"}
-              />
-              <Text
-                className={`font-mono text-label-caps tracking-[0.1em] mt-2 ${energyLevel === "drained"
-                    ? "text-error font-bold"
-                    : "text-on-surface-variant/60"
-                  }`}
+            {ENERGY_OPTIONS.map(({ key, icon, label, color }) => (
+              <Pressable
+                key={key}
+                onPress={() => setEnergyLevel(key)}
+                className={`flex-1 items-center justify-center py-5 rounded-xl border bg-surface-container/40 active:opacity-80 ${
+                  energyLevel === key
+                    ? key === "drained"
+                      ? "border-error/80 bg-surface-container-high"
+                      : "border-neon-green bg-surface-container-high"
+                    : "border-surface-variant/20"
+                }`}
               >
-                DRAINED
-              </Text>
-            </Pressable>
-
-
-            <Pressable
-              onPress={() => setEnergyLevel("steady")}
-              className={`flex-1 items-center justify-center py-5 rounded-xl border bg-surface-container/40 ${energyLevel === "steady"
-                  ? "border-neon-green bg-surface-container-high"
-                  : "border-surface-variant/20"
-                } active:opacity-80`}
-            >
-              <View className="h-6 justify-center items-center">
                 <MaterialCommunityIcons
-                  name="battery-medium"
+                  name={icon}
                   size={24}
-                  color={energyLevel === "steady" ? "#abd600" : "#e5e2e1/20"}
+                  color={energyLevel === key ? color : "#e5e2e1"}
                 />
-              </View>
-              <Text
-                className={`font-mono text-label-caps tracking-[0.1em] mt-2 ${energyLevel === "steady"
-                    ? "text-neon-green font-bold"
-                    : "text-on-surface-variant/60"
+                <Text
+                  className={`font-mono text-label-caps tracking-[0.1em] mt-2 ${
+                    energyLevel === key
+                      ? key === "drained"
+                        ? "text-error font-bold"
+                        : "text-neon-green font-bold"
+                      : "text-on-surface-variant/60"
                   }`}
-              >
-                STEADY
-              </Text>
-            </Pressable>
-
-
-            <Pressable
-              onPress={() => setEnergyLevel("charged")}
-              className={`flex-1 items-center justify-center py-5 rounded-xl border bg-surface-container/40 ${energyLevel === "charged"
-                  ? "border-neon-green bg-surface-container-high"
-                  : "border-surface-variant/20"
-                } active:opacity-80`}
-            >
-              <MaterialCommunityIcons
-                name="flash"
-                size={24}
-                color={energyLevel === "charged" ? "#abd600" : "#abd600/40"}
-              />
-              <Text
-                className={`font-mono text-label-caps tracking-[0.1em] mt-2 ${energyLevel === "charged"
-                    ? "text-neon-green font-bold"
-                    : "text-on-surface-variant/60"
-                  }`}
-              >
-                CHARGED
-              </Text>
-            </Pressable>
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
 
 
+        {/* Intensity Slider */}
         <View className="bg-surface-container/60 border border-surface-variant/25 rounded-xl p-stack-md gap-4 mt-stack-sm shadow-sm">
           <View className="flex-row justify-between items-center">
             <Text className="font-display text-body-lg font-bold text-on-surface">
@@ -194,8 +293,6 @@ export default function SessionComplete() {
               {intensityRating}
             </Text>
           </View>
-
-
           <View className="gap-2">
             <View
               onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
@@ -203,7 +300,6 @@ export default function SessionComplete() {
               onTouchMove={handleSliderTouch}
               className="w-full h-8 justify-center relative active:scale-[1.01]"
             >
-
               <View className="w-full h-2 rounded-full overflow-hidden absolute pointer-events-none">
                 <Svg width="100%" height="8">
                   <Defs>
@@ -215,15 +311,13 @@ export default function SessionComplete() {
                   <Rect width="100%" height="8" fill="url(#sliderGrad)" />
                 </Svg>
               </View>
-
-
               {sliderWidth > 0 && (
                 <View
                   pointerEvents="none"
                   style={{
                     position: "absolute",
                     left: `${((intensityRating - 1) / 9) * 100}%`,
-                    transform: [{ translateX: -12 }], // Half of thumb width (24)
+                    transform: [{ translateX: -12 }],
                   }}
                   className="w-6 h-6 rounded-full bg-white border-2 border-neon-green items-center justify-center shadow-lg shadow-neon-green/80"
                 >
@@ -231,20 +325,14 @@ export default function SessionComplete() {
                 </View>
               )}
             </View>
-
-
             <View className="flex-row justify-between mt-1">
-              <Text className="font-mono text-[10px] text-on-surface-variant/40 tracking-[0.1em]">
-                RECOVERY
-              </Text>
-              <Text className="font-mono text-[10px] text-on-surface-variant/40 tracking-[0.1em]">
-                MAX OUTPUT
-              </Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/40 tracking-[0.1em]">RECOVERY</Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/40 tracking-[0.1em]">MAX OUTPUT</Text>
             </View>
           </View>
         </View>
 
-
+        {/* Muscle Breakdown — dynamic từ routine.muscleGroups */}
         <View className="gap-3 mt-stack-sm">
           <View className="flex-row justify-between items-baseline">
             <Text className="font-display text-body-lg font-bold text-on-surface">
@@ -254,136 +342,45 @@ export default function SessionComplete() {
               SELECT ZONES
             </Text>
           </View>
-
-
           <View className="flex-row flex-wrap gap-3">
-
-            <Pressable
-              onPress={() => toggleMuscle("chest")}
-              className={`w-[48%] min-h-[96px] p-stack-md rounded-xl border bg-surface-container/40 relative overflow-hidden active:opacity-85 ${selectedMuscles.chest
-                  ? "border-neon-green bg-surface-container-high/80"
-                  : "border-surface-variant/20"
-                }`}
-            >
-              <Text
-                className={`font-display text-body-lg font-bold ${selectedMuscles.chest ? "text-neon-green" : "text-on-surface"
+            {availableMuscles.map((muscle) => {
+              const isSelected = selectedMuscles[muscle];
+              const icon = MUSCLE_ICONS[muscle] ?? "dumbbell";
+              const label = MUSCLE_LABELS[muscle] ?? muscle;
+              return (
+                <Pressable
+                  key={muscle}
+                  onPress={() => toggleMuscle(muscle)}
+                  className={`w-[48%] min-h-[96px] p-stack-md rounded-xl border bg-surface-container/40 relative overflow-hidden active:opacity-85 ${
+                    isSelected
+                      ? "border-neon-green bg-surface-container-high/80"
+                      : "border-surface-variant/20"
                   }`}
-              >
-                Chest
-              </Text>
-              <Text
-                className={`font-mono text-label-caps tracking-[0.05em] mt-1 ${selectedMuscles.chest
-                    ? "text-neon-green/90"
-                    : "text-on-surface-variant/40"
-                  }`}
-              >
-                {selectedMuscles.chest ? "HIGH LOAD" : "MODERATE"}
-              </Text>
-
-              <View className="absolute bottom-[-10px] right-[-10px] opacity-10 pointer-events-none rotate-[-15deg]">
-                <MaterialCommunityIcons
-                  name="dumbbell"
-                  size={64}
-                  color={selectedMuscles.chest ? "#abd600" : "#e5e2e1"}
-                />
-              </View>
-            </Pressable>
-
-
-            <Pressable
-              onPress={() => toggleMuscle("back")}
-              className={`w-[48%] min-h-[96px] p-stack-md rounded-xl border bg-surface-container/40 relative overflow-hidden active:opacity-85 ${selectedMuscles.back
-                  ? "border-neon-green bg-surface-container-high/80"
-                  : "border-surface-variant/20"
-                }`}
-            >
-              <Text
-                className={`font-display text-body-lg font-bold ${selectedMuscles.back ? "text-neon-green" : "text-on-surface"
-                  }`}
-              >
-                Back
-              </Text>
-              <Text
-                className={`font-mono text-label-caps tracking-[0.05em] mt-1 ${selectedMuscles.back
-                    ? "text-neon-green/90"
-                    : "text-on-surface-variant/40"
-                  }`}
-              >
-                {selectedMuscles.back ? "HIGH LOAD" : "MODERATE"}
-              </Text>
-
-              <View className="absolute bottom-[-10px] right-[-10px] opacity-10 pointer-events-none">
-                <MaterialCommunityIcons
-                  name="human"
-                  size={64}
-                  color={selectedMuscles.back ? "#abd600" : "#e5e2e1"}
-                />
-              </View>
-            </Pressable>
-
-
-            <Pressable
-              onPress={() => toggleMuscle("legs")}
-              className={`w-[48%] min-h-[96px] p-stack-md rounded-xl border bg-surface-container/40 relative overflow-hidden active:opacity-85 ${selectedMuscles.legs
-                  ? "border-neon-green bg-surface-container-high/80"
-                  : "border-surface-variant/20"
-                }`}
-            >
-              <Text
-                className={`font-display text-body-lg font-bold ${selectedMuscles.legs ? "text-neon-green" : "text-on-surface"
-                  }`}
-              >
-                Legs
-              </Text>
-              <Text
-                className={`font-mono text-label-caps tracking-[0.05em] mt-1 ${selectedMuscles.legs
-                    ? "text-neon-green/80"
-                    : "text-on-surface-variant/40"
-                  }`}
-              >
-                {selectedMuscles.legs ? "HIGH LOAD" : "RESTED"}
-              </Text>
-
-              <View className="absolute bottom-[-10px] right-[-10px] opacity-10 pointer-events-none rotate-[-10deg]">
-                <MaterialCommunityIcons
-                  name="run"
-                  size={64}
-                  color={selectedMuscles.legs ? "#abd600" : "#e5e2e1"}
-                />
-              </View>
-            </Pressable>
-
-
-            <Pressable
-              onPress={() => toggleMuscle("arms")}
-              className={`w-[48%] min-h-[96px] p-stack-md rounded-xl border bg-surface-container/40 relative overflow-hidden active:opacity-85 ${selectedMuscles.arms
-                  ? "border-neon-green bg-surface-container-high/80"
-                  : "border-surface-variant/20"
-                }`}
-            >
-              <Text
-                className={`font-display text-body-lg font-bold ${selectedMuscles.arms ? "text-neon-green" : "text-on-surface"
-                  }`}
-              >
-                Arms
-              </Text>
-              <Text
-                className={`font-mono text-label-caps tracking-[0.05em] mt-1 ${selectedMuscles.arms
-                    ? "text-neon-green/90"
-                    : "text-on-surface-variant/40"
-                  }`}
-              >
-                {selectedMuscles.arms ? "HIGH LOAD" : "MODERATE"}
-              </Text>
-
-              <View className="absolute bottom-[-10px] right-[-10px] opacity-10 pointer-events-none rotate-[10deg]">
-                <MaterialCommunityIcons
-                  name="arm-flex"
-                  size={64}
-                  color={selectedMuscles.arms ? "#abd600" : "#e5e2e1"}
-                />
-              </View>
-            </Pressable>
+                >
+                  <Text
+                    className={`font-display text-body-lg font-bold ${
+                      isSelected ? "text-neon-green" : "text-on-surface"
+                    }`}
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    className={`font-mono text-label-caps tracking-[0.05em] mt-1 ${
+                      isSelected ? "text-neon-green/90" : "text-on-surface-variant/40"
+                    }`}
+                  >
+                    {isSelected ? "HIGH LOAD" : "MODERATE"}
+                  </Text>
+                  <View className="absolute bottom-[-10px] right-[-10px] opacity-10 pointer-events-none">
+                    <MaterialCommunityIcons
+                      name={icon}
+                      size={64}
+                      color={isSelected ? "#abd600" : "#e5e2e1"}
+                    />
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       </ScrollView>
@@ -392,28 +389,7 @@ export default function SessionComplete() {
       <View className="px-container-mobile pb-stack-md pt-stack-sm border-t border-surface-variant/10">
         <Pressable
           disabled={isPending}
-          onPress={() => {
-            if (isSavingRef.current || isPending) return;
-            isSavingRef.current = true;
-            saveSession(
-              {
-                completedAt: new Date().toISOString(),
-                energyLevel,
-                intensityRating,
-                muscleBreakdown: selectedMuscles,
-              },
-              {
-                onSuccess: () => router.replace("/(tabs)"),
-                onError: () => {
-                  isSavingRef.current = false;
-                  Alert.alert(
-                    "Save Failed",
-                    "Could not save your session. Please try again."
-                  );
-                },
-              }
-            );
-          }}
+          onPress={handleSave}
           className={`w-full flex-row items-center justify-center gap-3 py-5 rounded-2xl bg-neon-green active:opacity-85 active:scale-[0.98] ${
             isPending ? "opacity-70" : ""
           }`}
