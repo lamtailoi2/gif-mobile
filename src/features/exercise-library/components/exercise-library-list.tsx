@@ -10,7 +10,6 @@ import {
   IExerciseFilterParams,
   useExerciseFilter,
 } from "../hooks/use-exercises-filter";
-import { useFilteredExercisesCount } from "../hooks/use-filtered-exercises-count";
 import { getAllExercisesQuery } from "../queries";
 import { IExercise } from "../types/exercise";
 import ExerciseCard from "./exercise-card";
@@ -44,7 +43,7 @@ export default function ExerciseLibraryList({
 
     const query = searchQuery.toLowerCase();
     return filteredByParams.filter((exercise) => {
-      const nameMatch = exercise.name.toLowerCase().includes(query);
+      const nameMatch = exercise.slug.toLowerCase().includes(query);
       const muscleMatch = exercise.muscleGroups.some((muscle) =>
         muscle.toLowerCase().includes(query),
       );
@@ -52,8 +51,6 @@ export default function ExerciseLibraryList({
       return nameMatch || muscleMatch || categoryMatch;
     });
   }, [filteredByParams, searchQuery]);
-
-  const exercisesCount = useFilteredExercisesCount(exercises, filters);
 
   const handleMuscleGroupChange = (muscleGroup?: MuscleGroup) => {
     setSelectedMuscleGroup(muscleGroup);
