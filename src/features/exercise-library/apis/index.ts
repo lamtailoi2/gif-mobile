@@ -2,7 +2,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { IExercise } from "../types/exercise";
 
-const EXCERCISE_LIBRARY_COLLECTION = "exerciseLibrary";
+const EXCERCISE_LIBRARY_COLLECTION = "exercise_library";
 
 export const getAllExercises = async (): Promise<IExercise[]> => {
   try {

@@ -5,8 +5,8 @@ import { IExerciseGuide } from "../types/guide";
  * Maps exercise IDs to their execution guides, mistakes, and alternatives
  */
 export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
-  "1": {
-    exerciseId: "1",
+  L9Mh1R5LLj8uZe0TJCTH: {
+    exerciseId: "L9Mh1R5LLj8uZe0TJCTH",
     primaryMuscles: ["quadriceps"],
     secondaryMuscles: ["gluteal"],
     executionSteps: [
@@ -74,8 +74,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "2": {
-    exerciseId: "2",
+  ynC6Ox0MyQEahCh5qaLI: {
+    exerciseId: "ynC6Ox0MyQEahCh5qaLI",
     primaryMuscles: ["upper-back"],
     secondaryMuscles: ["biceps"],
     executionSteps: [
@@ -143,8 +143,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "3": {
-    exerciseId: "3",
+  raIw6r5CHl8VfdMPWpem: {
+    exerciseId: "raIw6r5CHl8VfdMPWpem",
     primaryMuscles: ["upper-back"],
     secondaryMuscles: ["trapezius", "biceps", "forearm"],
     executionSteps: [
@@ -212,8 +212,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "4": {
-    exerciseId: "4",
+  JcBVXwE2jCzP1PAFCba9: {
+    exerciseId: "JcBVXwE2jCzP1PAFCba9",
     primaryMuscles: ["upper-back"],
     secondaryMuscles: ["trapezius", "lower-back", "biceps", "forearm"],
     executionSteps: [
@@ -281,8 +281,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "5": {
-    exerciseId: "5",
+  nq7qlyGDJfRKmKaXdIaq: {
+    exerciseId: "nq7qlyGDJfRKmKaXdIaq",
     primaryMuscles: ["chest"],
     secondaryMuscles: ["triceps", "deltoids"],
     executionSteps: [
@@ -350,8 +350,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "6": {
-    exerciseId: "6",
+  mGYRkB65Zbt02hUriCg4: {
+    exerciseId: "mGYRkB65Zbt02hUriCg4",
     primaryMuscles: ["chest"],
     secondaryMuscles: ["triceps", "deltoids"],
     executionSteps: [
@@ -419,8 +419,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "7": {
-    exerciseId: "7",
+  S5Dee4akYysy4CH6xmbf: {
+    exerciseId: "S5Dee4akYysy4CH6xmbf",
     primaryMuscles: ["hamstring"],
     secondaryMuscles: ["gluteal", "lower-back", "trapezius"],
     executionSteps: [
@@ -488,8 +488,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "8": {
-    exerciseId: "8",
+  zQKN6hLNxVRg4ixwhfOx: {
+    exerciseId: "zQKN6hLNxVRg4ixwhfOx",
     primaryMuscles: ["deltoids"],
     secondaryMuscles: ["triceps", "trapezius"],
     executionSteps: [
@@ -557,8 +557,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "9": {
-    exerciseId: "9",
+  ociZWKaglgsLQV60elDY: {
+    exerciseId: "ociZWKaglgsLQV60elDY",
     primaryMuscles: ["biceps"],
     secondaryMuscles: ["forearm"],
     executionSteps: [
@@ -626,8 +626,8 @@ export const EXERCISE_GUIDES: Record<string, IExerciseGuide> = {
     ],
   },
 
-  "10": {
-    exerciseId: "10",
+  JSMuW3sW25t7r2XQDswr: {
+    exerciseId: "JSMuW3sW25t7r2XQDswr",
     primaryMuscles: ["abs"],
     secondaryMuscles: ["obliques", "lower-back"],
     executionSteps: [
