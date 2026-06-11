@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { getAllExercises } from "@/features/exercise-library/apis";
 
-const ROUTINES_COLLECTION = "workoutRoutines";
+const ROUTINES_COLLECTION = "workout_routines";
 
 /** Tạo mapping muscleGroups → exerciseIds từ exerciseLibrary */
 const pickExercisesForMuscles = (
@@ -70,7 +70,7 @@ const ROUTINE_TEMPLATES: Omit<IWorkoutRoutine, "id" | "exerciseIds" | "createdAt
 ];
 
 /**
- * Idempotent — chỉ seed nếu workoutRoutines collection đang rỗng.
+ * Idempotent — chỉ seed nếu workout_routines collection đang rỗng.
  */
 export const seedWorkoutRoutines = async (): Promise<void> => {
   // 1. Check nếu đã có routines
@@ -78,7 +78,7 @@ export const seedWorkoutRoutines = async (): Promise<void> => {
     query(collection(db, ROUTINES_COLLECTION), limit(1))
   );
   if (!existingSnap.empty) {
-    console.log("[Seed] workoutRoutines already seeded — skipping.");
+    console.log("[Seed] workout_routines already seeded — skipping.");
     return;
   }
 

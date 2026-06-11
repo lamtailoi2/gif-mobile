@@ -13,7 +13,7 @@ import { calculateStreak } from "./calculate-streak";
 import { IHomeDashboard } from "../types/dashboard";
 
 const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
-const ROUTINES_COLLECTION = "workoutRoutines";
+const ROUTINES_COLLECTION = "workout_routines";
 
 const getTimeOfDay = (): "morning" | "afternoon" | "evening" => {
   const hour = new Date().getHours();
