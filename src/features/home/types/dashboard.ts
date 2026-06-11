@@ -24,6 +24,8 @@ export interface IStreak {
 }
 
 export interface ITodaysWorkout {
+  /** routineId — dùng để navigate đến active-session */
+  id: string;
   type: string;
   focus: string;
   durationMin: number;

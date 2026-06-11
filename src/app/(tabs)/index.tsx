@@ -11,8 +11,10 @@ import { useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function HomeScreen() {
-  const { data, isLoading } = useHomeDashboard();
   const { user } = useUser();
+  const userName =
+    user?.fullName ?? user?.firstName ?? user?.username ?? "Athlete";
+  const { data, isLoading } = useHomeDashboard(user?.id ?? "", userName);
   const router = useRouter();
   return (
     <SafeAreaView
@@ -58,7 +60,13 @@ export default function HomeScreen() {
 
           <TodaysWorkoutCard
             workout={data.todaysWorkout}
-            onPress={() => router.push("/(tabs)/workout/active-session")}
+            onPress={() => {
+              if (data.todaysWorkout.id) {
+                router.push(
+                  `/(tabs)/workout/active-session?routineId=${data.todaysWorkout.id}`
+                );
+              }
+            }}
           />
 
           <RecoveryMap
@@ -70,3 +78,4 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
