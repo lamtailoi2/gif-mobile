@@ -11,15 +11,19 @@ interface IWorkoutSessionState {
   exerciseLogs: IExerciseLog[];
   /** ISO string — dùng để tính durationSec khi lưu session */
   sessionStartedAt: string | null;
+  /** Flag ngăn double-save (persist qua remount, khác với useRef) */
+  sessionSaved: boolean;
 }
 
 interface IWorkoutSessionActions {
   startSession: (routine: IWorkoutRoutine, exercises: IExercise[]) => void;
   /**
-   * Ghi nhận một set hoàn thành.
+   * Ghi nhận một set hoàn chỉnh.
    * @returns true nếu đây là set cuối của exercise cuối (session done).
    */
   completeSet: (weight: number, reps: number) => boolean;
+  markSessionSaved: () => void;
+  resetSessionSaved: () => void;
   resetSession: () => void;
 }
 
@@ -32,6 +36,7 @@ const initialState: IWorkoutSessionState = {
   currentSetIndex: 0,
   exerciseLogs: [],
   sessionStartedAt: null,
+  sessionSaved: false,
 };
 
 export const useWorkoutSessionStore = create<IWorkoutSessionStore>(
@@ -46,6 +51,7 @@ export const useWorkoutSessionStore = create<IWorkoutSessionStore>(
         currentSetIndex: 0,
         exerciseLogs: [],
         sessionStartedAt: new Date().toISOString(),
+        sessionSaved: false,
       });
     },
 
@@ -110,6 +116,9 @@ export const useWorkoutSessionStore = create<IWorkoutSessionStore>(
 
       return false;
     },
+
+    markSessionSaved: () => set({ sessionSaved: true }),
+    resetSessionSaved: () => set({ sessionSaved: false }),
 
     resetSession: () => set(initialState),
   })

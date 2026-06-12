@@ -94,7 +94,7 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
   };
 
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (isLoading || !currentExercise) {
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#abd600" />
@@ -105,16 +105,18 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
     );
   }
 
-  // ── Error state ────────────────────────────────────────────────────────────
-  if (isError) {
+  // ── Invalid / Error state ──────────────────────────────────────────────────
+  if (!routineId || isError || !data) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center px-container-mobile">
         <MaterialIcons name="error-outline" size={48} color="#ffb4ab" />
         <Text className="font-display text-body-lg font-bold text-error mt-4 text-center">
-          Could not load workout
+          {!routineId ? "No routine selected" : "Could not load workout"}
         </Text>
         <Text className="font-body text-body-md text-on-surface-variant/60 mt-2 text-center">
-          Check your connection and try again.
+          {!routineId
+            ? "Go back and select a routine to start."
+            : "Check your connection and try again."}
         </Text>
         <Pressable
           onPress={() => router.back()}
@@ -124,6 +126,18 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
             Go Back
           </Text>
         </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Store sync (brief flash after data arrives, before useEffect fires) ────
+  if (!currentExercise) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#abd600" />
+        <Text className="font-mono text-label-caps text-on-surface-variant/40 mt-4 tracking-widest">
+          PREPARING SESSION...
+        </Text>
       </SafeAreaView>
     );
   }

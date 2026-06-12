@@ -3,7 +3,7 @@ import { useSaveWorkoutSession } from "@/features/workout-session/hooks/use-save
 import { useWorkoutSessionStore } from "@/features/workout-session/store/use-workout-session-store";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -54,10 +54,9 @@ export default function SessionComplete() {
   const router = useRouter();
   const theme = useTheme();
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
-  const isSavingRef = useRef(false);
 
   // ── Store data ─────────────────────────────────────────────────────────────
-  const { routine, exerciseLogs, sessionStartedAt, resetSession } =
+  const { routine, exerciseLogs, sessionStartedAt, sessionSaved, markSessionSaved, resetSessionSaved, resetSession } =
     useWorkoutSessionStore();
 
   // ── Tính totalVolume từ exerciseLogs thực tế ──────────────────────────────
@@ -117,8 +116,9 @@ export default function SessionComplete() {
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = () => {
-    if (isSavingRef.current || isPending) return;
-    isSavingRef.current = true;
+    // sessionSaved persists qua Strict Mode remount — ngăn double-save
+    if (sessionSaved || isPending) return;
+    markSessionSaved();
 
     saveSession(
       {
@@ -138,7 +138,8 @@ export default function SessionComplete() {
           router.replace("/(tabs)");
         },
         onError: () => {
-          isSavingRef.current = false;
+          // Reset flag để user có thể retry
+          resetSessionSaved();
           Alert.alert(
             "Save Failed",
             "Could not save your session. Please try again."

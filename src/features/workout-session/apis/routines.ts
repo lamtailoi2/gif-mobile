@@ -8,8 +8,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 
-const ROUTINES_COLLECTION = "workoutRoutines";
-const EXERCISE_LIBRARY_COLLECTION = "exerciseLibrary";
+const ROUTINES_COLLECTION = "workout_routines";
+const EXERCISE_LIBRARY_COLLECTION = "exercise_library";
 
 /** Lấy tất cả routines từ Firestore. */
 export const getAllRoutines = async (): Promise<IWorkoutRoutine[]> => {
