@@ -1,4 +1,3 @@
-// src/features/progress/components/recovery-chart.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { IRecoveryItem } from '../types/progress';

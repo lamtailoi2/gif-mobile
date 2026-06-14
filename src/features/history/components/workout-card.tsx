@@ -7,16 +7,17 @@ export const WorkoutCard = ({ item }: { item: IWorkoutSession }) => {
         <View style={styles.card}>
             <View style={styles.header}>
                 <View style={styles.titleRow}>
-                    <Text style={styles.title}>{item.title}</Text>
+                    {/* Dùng loại bài tập làm Tiêu đề luôn */}
+                    <Text style={styles.title}>{item.type} WORKOUT</Text>
                     <Text style={styles.intensity}>{item.intensity}</Text>
                 </View>
-                {/* Đã xóa thẻ Text chứa mũi tên ở đây */}
             </View>
             <Text style={styles.time}>{item.time}</Text>
-            <View style={styles.statsRow}>
-                <Text style={styles.stat}>⏱ {item.durationMinutes} min</Text>
-                <Text style={styles.stat}>🔥 {item.caloriesBurned} kcal</Text>
-                <Text style={styles.stat}>🏋️ {item.exercisesCount} exercises</Text>
+
+            <View style={styles.muscleRow}>
+                {item.muscleGroups.map((muscle, index) => (
+                    <Text key={index} style={styles.muscleTag}>{muscle.toUpperCase()}</Text>
+                ))}
             </View>
         </View>
     );
@@ -42,4 +43,6 @@ const styles = StyleSheet.create({
     time: { color: '#888', fontSize: 12, marginVertical: 8 },
     statsRow: { flexDirection: 'row', gap: 16, marginTop: 8 },
     stat: { color: '#CCC', fontSize: 12 },
+    muscleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    muscleTag: { color: '#CCC', fontSize: 10, backgroundColor: '#333', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
 });
