@@ -1,47 +1,52 @@
-
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
-import { IWorkoutSession } from '../types/history';
+import { EIntensity, IWorkoutSession } from '../types/history';
 
-const WORKOUT_SESSIONS_COLLECTION = 'workout_sessions';
+const determineWorkoutType = (muscleGroups: string[]): string => {
+    const muscleSet = new Set(muscleGroups.map(m => m.toLowerCase()));
+    if (['chest', 'shoulders', 'arms'].filter(m => muscleSet.has(m)).length >= 2) return 'PUSH';
+    if (['back'].filter(m => muscleSet.has(m)).length >= 1) return 'PULL';
+    if (['legs'].filter(m => muscleSet.has(m)).length >= 1) return 'LEGS';
+    if (muscleGroups.length >= 3) return 'FULL BODY';
+    return 'CUSTOM';
+};
 
-export const getWorkoutHistory = async (userId?: string): Promise<IWorkoutSession[]> => {
+const formatTime = (isoString: string): string => {
+    const date = new Date(isoString);
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+const mapIntensity = (rating: number | undefined): EIntensity => {
+    const validRating = Math.max(1, Math.min(10, rating || 5));
+    if (validRating >= 8) return EIntensity.HighIntensity;
+    if (validRating >= 6) return EIntensity.Intense;
+    return EIntensity.Normal;
+};
+
+export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession[]> => {
+    if (!userId) return [];
     try {
-        const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-        // Filter theo userId nếu có, sort in-memory để tránh composite index
-        const q = userId
-            ? query(sessionsRef, where('userId', '==', userId))
-            : query(sessionsRef);
+        const q = query(collection(db, 'workout_sessions'), where('userId', '==', userId), orderBy('completedAt', 'desc'));
         const snapshot = await getDocs(q);
 
-        return snapshot.docs
-            .map((docItem) => {
-                const data = docItem.data();
-                const durationSec: number = data.durationSec || 0;
-                const exerciseLogs: any[] = data.exerciseLogs || [];
-                const muscleBreakdown: Record<string, boolean> = data.muscleBreakdown || {};
+        return snapshot.docs.map((docItem) => {
+            const data = docItem.data();
+            if (!data.completedAt) return null; // Chỉ cần field này là đủ sống
 
-                return {
-                    id: docItem.id,
-                    title: data.routineName || 'Untitled Workout',
-                    date: data.completedAt ? data.completedAt.split('T')[0] : '',
-                    time: data.completedAt
-                        ? new Date(data.completedAt).toLocaleTimeString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        })
-                        : '',
-                    durationMinutes: Math.round(durationSec / 60),
-                    caloriesBurned: 0, // không lưu calories
-                    exercisesCount: exerciseLogs.length,
-                    intensity: data.intensityRating >= 8 ? 'HIGH' : data.intensityRating >= 5 ? 'NORMAL' : 'LOW',
-                    type: data.routineName || 'CUSTOM',
-                    muscleGroups: Object.keys(muscleBreakdown).filter((k) => muscleBreakdown[k]),
-                } as IWorkoutSession;
-            })
-            .sort((a, b) => (b.date > a.date ? 1 : -1));
+            const muscleBreakdown = data.muscleBreakdown || {};
+            const muscleGroups = Object.keys(muscleBreakdown).filter(k => muscleBreakdown[k]);
+
+            return {
+                id: docItem.id,
+                date: data.completedAt.split('T')[0],
+                time: formatTime(data.completedAt),
+                intensity: mapIntensity(data.intensityRating),
+                type: determineWorkoutType(muscleGroups),
+                muscleGroups: muscleGroups,
+            } as IWorkoutSession;
+        }).filter((session) => session !== null) as IWorkoutSession[];
     } catch (error) {
-        console.error('Lỗi lấy dữ liệu History:', error);
+        console.error('Lỗi History:', error);
         return [];
     }
 };

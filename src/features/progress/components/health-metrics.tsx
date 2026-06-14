@@ -1,4 +1,3 @@
-// src/features/progress/components/health-metrics.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { IHealthMetrics } from '../types/progress';
