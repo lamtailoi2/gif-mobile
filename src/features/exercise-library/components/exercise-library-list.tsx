@@ -13,7 +13,6 @@ import {
 import { getAllExercisesQuery } from "../queries";
 import { IExercise } from "../types/exercise";
 import ExerciseCard from "./exercise-card";
-import ExerciseLibraryHeader from "./exercise-library-header";
 import ExerciseSearchInput from "./exercise-search-input";
 import MuscleGroupFilter from "./muscle-group-filter";
 
@@ -71,7 +70,7 @@ export default function ExerciseLibraryList({
   return (
     <View className="flex-1 bg-background">
       {/* Fixed Header */}
-      <ExerciseLibraryHeader avatarUrl={user?.imageUrl} />
+      {/* <ExerciseLibraryHeader avatarUrl={user?.imageUrl} /> */}
 
       {/* Search Input */}
       <ExerciseSearchInput
@@ -107,6 +106,10 @@ export default function ExerciseLibraryList({
 
       {/* List */}
       <FlatList
+        windowSize={5}
+        removeClippedSubviews={true}
+        initialNumToRender={6}
+        maxToRenderPerBatch={10}
         contentContainerStyle={{ paddingBottom: tabBarHeight + 5 }}
         data={filtered}
         renderItem={({ item }) => (
