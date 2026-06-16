@@ -1,36 +1,81 @@
-// src/features/progress/components/consistency-map.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
-const WEEKS = Array.from({ length: 18 });
-const DAYS = Array.from({ length: 7 });
+const ALL_MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const ConsistencyMap = () => {
-    const getSquareColor = () => {
-        const rand = Math.random();
-        if (rand > 0.8) return '#D4FF00';
-        if (rand > 0.6) return '#88AA00';
-        return '#222222';
-    };
+const TOTAL_WEEKS = 18;
+const DAYS_PER_WEEK = 7;
+
+interface IConsistencyMapProps {
+    data: string[];
+}
+
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+export const ConsistencyMap = ({ data = [] }: IConsistencyMapProps) => {
+
+    const dynamicMonths = useMemo(() => {
+        const currentMonth = new Date().getMonth();
+        const result = [];
+        for (let i = 5; i >= 0; i--) {
+            let mIndex = currentMonth - i;
+            if (mIndex < 0) mIndex += 12;
+            result.push(ALL_MONTHS[mIndex]);
+        }
+        return result;
+    }, []);
+
+    const gridData = useMemo(() => {
+        const workoutDatesSet = new Set(data);
+
+        const weeksArray = [];
+
+        const endDay = new Date();
+        endDay.setDate(endDay.getDate() + (6 - endDay.getDay()));
+
+        for (let week = 0; week < TOTAL_WEEKS; week++) {
+            const currentWeek = [];
+
+            for (let day = 0; day < DAYS_PER_WEEK; day++) {
+                const totalDaysBack = ((TOTAL_WEEKS - 1 - week) * DAYS_PER_WEEK) + (6 - day);
+                const currentDay = new Date(endDay);
+                currentDay.setDate(endDay.getDate() - totalDaysBack);
+
+                const dateStr = formatDate(currentDay);
+
+                const isWorkoutDay = workoutDatesSet.has(dateStr);
+
+                let color = '#222222';
+                if (currentDay > new Date()) {
+                    color = '#111111';
+                } else if (isWorkoutDay) {
+                    color = '#D4FF00';
+                }
+
+                currentWeek.push(color);
+            }
+            weeksArray.push(currentWeek);
+        }
+        return weeksArray;
+    }, [data]);
 
     return (
         <View style={styles.card}>
             <Text style={styles.title}>Consistency</Text>
 
             <View style={styles.monthsRow}>
-                {MONTHS.map((m, i) => (
+                {dynamicMonths.map((m, i) => (
                     <Text key={i} style={styles.monthText}>{m}</Text>
                 ))}
             </View>
 
             <View style={styles.gridContainer}>
-                {WEEKS.map((_, weekIndex) => (
+                {gridData.map((week, weekIndex) => (
                     <View key={weekIndex} style={styles.column}>
-                        {DAYS.map((_, dayIndex) => (
+                        {week.map((color, dayIndex) => (
                             <View
                                 key={dayIndex}
-                                style={[styles.square, { backgroundColor: getSquareColor() }]}
+                                style={[styles.square, { backgroundColor: color }]}
                             />
                         ))}
                     </View>

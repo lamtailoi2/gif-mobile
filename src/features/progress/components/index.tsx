@@ -1,3 +1,4 @@
+import { useUser } from '@clerk/expo';
 import { Href, useRouter } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -8,17 +9,17 @@ import { AiInsight } from './ai-insight';
 import { ConsistencyMap } from './consistency-map';
 import { HealthMetrics } from './health-metrics';
 import { RecoveryChart } from './recovery-chart';
-import { VolumeChart } from './volume-chart';
 
 export const ProgressDashboard = () => {
     const router = useRouter();
-    const { data, isLoading, isError } = useGetProgressDashboard();
+    const { user } = useUser();
+    const { data, isLoading, isError } = useGetProgressDashboard(user?.id);
 
     const handleGoToHistory = () => {
         router.push('/progress/history' as Href);
     };
 
-    if (isLoading) {
+    if (isLoading || !user) {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color="#D4FF00" />
@@ -39,16 +40,19 @@ export const ProgressDashboard = () => {
             <Text style={styles.title}>Analytics</Text>
             <Text style={styles.subtitle}>Deep dive into your biometrics and progression.</Text>
 
-            {/* Các component nhận dữ liệu động */}
             <AiInsight data={data.aiInsight} />
 
-            {/* Các component giữ UI tĩnh chờ update data sau */}
-            <VolumeChart />
-            <ConsistencyMap />
+            {data.workoutDates && data.workoutDates.length > 0 && (
+                <ConsistencyMap data={data.workoutDates} />
+            )}
 
-            {/* Các component nhận dữ liệu động */}
-            <RecoveryChart data={data.recoveryData} />
-            <HealthMetrics data={data.healthMetrics} />
+            {data.recoveryData && data.recoveryData.length > 0 && (
+                <RecoveryChart data={data.recoveryData} />
+            )}
+
+            {data.healthMetrics && (
+                <HealthMetrics data={data.healthMetrics} />
+            )}
 
             <TouchableOpacity style={styles.historyButton} onPress={handleGoToHistory}>
                 <Text style={styles.historyButtonText}>View Workout History</Text>

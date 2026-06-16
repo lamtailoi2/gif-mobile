@@ -1,5 +1,3 @@
-// src/features/progress/types/progress.ts
-
 export interface IRecoveryItem {
     day: string;
     recovery: number;
@@ -16,10 +14,9 @@ export interface IAiInsight {
     highlight: string;
 }
 
-// Gộp chung lại thành 1 object bự cho Dashboard
 export interface IProgressDashboardData {
-    aiInsight: IAiInsight;
-    healthMetrics: IHealthMetrics;
+    workoutDates: string[];
     recoveryData: IRecoveryItem[];
-    // Sau này bạn có thể thêm volumeData và consistencyData vào đây
+    aiInsight: IAiInsight;
+    healthMetrics?: IHealthMetrics;
 }
