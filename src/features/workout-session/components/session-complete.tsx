@@ -56,19 +56,15 @@ export default function SessionComplete() {
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
 
   // ── Store data ─────────────────────────────────────────────────────────────
-  const { routine, exerciseLogs, sessionStartedAt, sessionSaved, markSessionSaved, resetSessionSaved, resetSession } =
+  const { routine, uiExercises, getPayloadLogs, sessionStartedAt, sessionSaved, markSessionSaved, resetSessionSaved, resetSession } =
     useWorkoutSessionStore();
 
-  // ── Tính totalVolume từ exerciseLogs thực tế ──────────────────────────────
-  const totalVolume = useMemo(
-    () =>
-      exerciseLogs.reduce(
-        (acc, log) =>
-          acc + log.sets.reduce((s, set) => s + set.weight * set.reps, 0),
-        0
-      ),
-    [exerciseLogs]
-  );
+  // ── Tính totalVolume từ uiExercises thực tế ──────────────────────────────
+  const totalVolume = useMemo(() => {
+    return uiExercises.reduce((acc, ex) => {
+      return acc + ex.sets.filter((s) => s.isCompleted).reduce((s, set) => s + set.weight * set.reps, 0);
+    }, 0);
+  }, [uiExercises]);
 
   // ── Tính durationSec ──────────────────────────────────────────────────────
   const durationSec = useMemo(() => {
@@ -99,8 +95,13 @@ export default function SessionComplete() {
   };
 
   // ── Session stats ─────────────────────────────────────────────────────────
-  const totalSets = exerciseLogs.reduce((acc, log) => acc + log.sets.length, 0);
-  const totalExercises = exerciseLogs.length;
+  const totalSets = useMemo(() => {
+    return uiExercises.reduce((acc, ex) => acc + ex.sets.filter((s) => s.isCompleted).length, 0);
+  }, [uiExercises]);
+
+  const totalExercises = useMemo(() => {
+    return uiExercises.filter((ex) => ex.sets.some((s) => s.isCompleted)).length;
+  }, [uiExercises]);
 
   // ── Intensity / Energy ────────────────────────────────────────────────────
   const [energyLevel, setEnergyLevel] = useState<"drained" | "steady" | "charged">("steady");
@@ -129,7 +130,7 @@ export default function SessionComplete() {
         energyLevel,
         intensityRating,
         muscleBreakdown: selectedMuscles,
-        exerciseLogs,
+        exerciseLogs: getPayloadLogs(),
         totalVolume,
       },
       {

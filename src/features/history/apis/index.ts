@@ -1,5 +1,6 @@
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { IExerciseLog } from '../../../interfaces/workout-session.interface';
 import { EIntensity, IWorkoutSession } from '../types/history';
 
 const determineWorkoutType = (muscleGroups: string[]): string => {
@@ -48,5 +49,40 @@ export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession
     } catch (error) {
         console.error('Lỗi History:', error);
         return [];
+    }
+};
+
+export const getLatestSessionFullLogs = async (userId: string): Promise<IExerciseLog[]> => {
+    if (!userId) return [];
+    try {
+        const q = query(
+            collection(db, 'workout_sessions'),
+            where('userId', '==', userId),
+            orderBy('completedAt', 'desc'),
+            limit(1)
+        );
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return [];
+        
+        const data = snapshot.docs[0].data();
+        return data.exerciseLogs || [];
+    } catch (error) {
+        console.error('Lỗi lấy full logs:', error);
+        return [];
+    }
+};
+
+export const getSessionById = async (sessionId: string) => {
+    if (!sessionId) return null;
+    try {
+        const docRef = doc(db, 'workout_sessions', sessionId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() };
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching session details:', error);
+        return null;
     }
 };

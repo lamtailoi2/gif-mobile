@@ -77,7 +77,7 @@ export const HistoryList = () => {
                     return (
                         <View>
                             {showHeader && <Text style={styles.dateHeader}>{formatDateHeader(item.date)}</Text>}
-                            <WorkoutCard item={item} />
+                            <WorkoutCard item={item} onPress={() => router.push(`/(tabs)/progress/session-details?id=${item.id}`)} />
                         </View>
                     );
                 }}
