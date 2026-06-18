@@ -13,6 +13,7 @@ export interface IMistake {
 }
 
 export interface IAlternativeExercise {
+  exerciseId: string;
   name: string;
   picture: string;
   description: string;
