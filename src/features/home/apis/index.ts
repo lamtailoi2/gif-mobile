@@ -11,6 +11,7 @@ import { buildRecoveryMap } from "./build-recovery-map";
 import { calculateReadiness } from "./calculate-readiness";
 import { calculateStreak } from "./calculate-streak";
 import { IHomeDashboard } from "../types/dashboard";
+import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
 
 const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
 const ROUTINES_COLLECTION = "workout_routines";
@@ -89,23 +90,34 @@ export const getHomeDashboard = async (
     console.error("Error fetching routines:", e);
   }
 
-  // 3. Compute derived values
+  // 3. Check for AI Plan
+  const aiPlan = await getAiWorkoutPlan(userId);
+
+  // 4. Compute derived values
   const lastSession = sessions[0];
   const streak = calculateStreak(sessions);
   const readiness = calculateReadiness(lastSession);
   const recoveryMap = buildRecoveryMap(lastSession);
-  const todaysRoutine = getTodaysRoutine(routines);
-
-  return {
-    user: { name: userName },
-    greetingTimeOfDay: getTimeOfDay(),
-    hasNotification: false,
-    readiness,
-    streak: {
-      days: streak,
-      percentile: streakToPercentile(streak),
-    },
-    todaysWorkout: todaysRoutine
+  
+  let todaysWorkout;
+  
+  if (aiPlan && aiPlan.schedule && aiPlan.schedule.length > 0) {
+    const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon...
+    const adjustedDay = (dayOfWeek + 6) % 7; // Mon=0, Sun=6
+    const dayIndex = adjustedDay % aiPlan.schedule.length;
+    const todayAiSchedule = aiPlan.schedule[dayIndex];
+    
+    todaysWorkout = {
+      id: `ai_plan_day_${dayIndex}_user_${userId}`,
+      type: todayAiSchedule.day || "AI Routine",
+      focus: todayAiSchedule.focus,
+      durationMin: 45,
+      intensity: "Medium",
+      load: "Personalized"
+    };
+  } else {
+    const todaysRoutine = getTodaysRoutine(routines);
+    todaysWorkout = todaysRoutine
       ? {
           id: todaysRoutine.id,
           type: todaysRoutine.name,
@@ -121,7 +133,19 @@ export const getHomeDashboard = async (
           durationMin: 0,
           intensity: "Low",
           load: "None",
-        },
+        };
+  }
+
+  return {
+    user: { name: userName },
+    greetingTimeOfDay: getTimeOfDay(),
+    hasNotification: false,
+    readiness,
+    streak: {
+      days: streak,
+      percentile: streakToPercentile(streak),
+    },
+    todaysWorkout,
     recoveryMap,
   };
 };

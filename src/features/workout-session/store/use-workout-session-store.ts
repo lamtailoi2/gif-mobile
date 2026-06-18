@@ -16,8 +16,11 @@ export interface IUISet {
 export interface IUIExercise {
   exerciseId: string;
   exerciseName: string;
+  thumbnailUrl?: string;
   sets: IUISet[];
 }
+
+export type SessionState = "PREPARING" | "ACTIVE" | "RESTING" | "COMPLETED";
 
 interface IWorkoutSessionState {
   routine: IWorkoutRoutine | null;
@@ -27,14 +30,21 @@ interface IWorkoutSessionState {
   sessionStartedAt: string | null;
   /** Flag ngăn double-save (persist qua remount) */
   sessionSaved: boolean;
+
+  sessionState: SessionState;
+  currentExerciseIndex: number;
+  currentSetIndex: number;
 }
 
 interface IWorkoutSessionActions {
   startSession: (routine: IWorkoutRoutine, exercises: IExercise[], historyLogs?: IExerciseLog[]) => void;
-  toggleSetComplete: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, field: "weight" | "reps", value: number) => void;
-  addSet: (exerciseId: string) => void;
-  removeSet: (exerciseId: string, setId: string) => void;
+  
+  // State machine actions
+  startWorkout: () => void; 
+  completeCurrentSet: () => void; 
+  skipRest: () => void; 
+
   getPayloadLogs: () => IExerciseLog[];
   markSessionSaved: () => void;
   resetSessionSaved: () => void;
@@ -51,6 +61,10 @@ const initialState: IWorkoutSessionState = {
   uiExercises: [],
   sessionStartedAt: null,
   sessionSaved: false,
+  
+  sessionState: "PREPARING",
+  currentExerciseIndex: 0,
+  currentSetIndex: 0,
 };
 
 export const useWorkoutSessionStore = create<IWorkoutSessionStore>((set, get) => ({
@@ -76,6 +90,7 @@ export const useWorkoutSessionStore = create<IWorkoutSessionStore>((set, get) =>
       return {
         exerciseId: ex.id,
         exerciseName: ex.name,
+        thumbnailUrl: ex.thumbnailUrl,
         sets,
       };
     });
@@ -86,27 +101,9 @@ export const useWorkoutSessionStore = create<IWorkoutSessionStore>((set, get) =>
       uiExercises,
       sessionStartedAt: new Date().toISOString(),
       sessionSaved: false,
-    });
-  },
-
-  toggleSetComplete: (exerciseId, setId) => {
-    set((state) => {
-      const uiExercises = state.uiExercises.map((ex) => {
-        if (ex.exerciseId !== exerciseId) return ex;
-        return {
-          ...ex,
-          sets: ex.sets.map((s) => {
-            if (s.id !== setId) return s;
-            const isCompleted = !s.isCompleted;
-            return {
-              ...s,
-              isCompleted,
-              completedAt: isCompleted ? new Date().toISOString() : undefined,
-            };
-          }),
-        };
-      });
-      return { uiExercises };
+      sessionState: "PREPARING",
+      currentExerciseIndex: 0,
+      currentSetIndex: 0,
     });
   },
 
@@ -123,31 +120,58 @@ export const useWorkoutSessionStore = create<IWorkoutSessionStore>((set, get) =>
     });
   },
 
-  addSet: (exerciseId) => {
-    set((state) => {
-      const uiExercises = state.uiExercises.map((ex) => {
-        if (ex.exerciseId !== exerciseId) return ex;
-        const lastSet = ex.sets[ex.sets.length - 1];
-        const newSet: IUISet = {
-          id: generateId(),
-          weight: lastSet ? lastSet.weight : 45,
-          reps: lastSet ? lastSet.reps : 10,
-          isCompleted: false,
-        };
-        return { ...ex, sets: [...ex.sets, newSet] };
-      });
-      return { uiExercises };
+  startWorkout: () => {
+    set({ sessionState: "ACTIVE" });
+  },
+
+  completeCurrentSet: () => {
+    const state = get();
+    const { currentExerciseIndex, currentSetIndex, uiExercises } = state;
+    
+    // Prevent out of bounds
+    if (currentExerciseIndex >= uiExercises.length) return;
+    
+    const exercise = uiExercises[currentExerciseIndex];
+    if (currentSetIndex >= exercise.sets.length) return;
+
+    // 1. Mark current set as completed
+    const updatedExercises = uiExercises.map((ex, exIdx) => {
+      if (exIdx !== currentExerciseIndex) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map((s, sIdx) => {
+          if (sIdx !== currentSetIndex) return s;
+          return { ...s, isCompleted: true, completedAt: new Date().toISOString() };
+        })
+      };
+    });
+
+    // 2. Determine next state
+    let nextState: SessionState = "RESTING";
+    let nextExIndex = currentExerciseIndex;
+    let nextSetIndex = currentSetIndex + 1;
+
+    if (nextSetIndex >= exercise.sets.length) {
+      // Move to next exercise
+      nextExIndex++;
+      nextSetIndex = 0;
+      
+      if (nextExIndex >= uiExercises.length) {
+        // Workout finished!
+        nextState = "COMPLETED";
+      }
+    }
+
+    set({
+      uiExercises: updatedExercises,
+      sessionState: nextState,
+      currentExerciseIndex: nextState === "COMPLETED" ? currentExerciseIndex : nextExIndex,
+      currentSetIndex: nextState === "COMPLETED" ? currentSetIndex : nextSetIndex,
     });
   },
 
-  removeSet: (exerciseId, setId) => {
-    set((state) => {
-      const uiExercises = state.uiExercises.map((ex) => {
-        if (ex.exerciseId !== exerciseId) return ex;
-        return { ...ex, sets: ex.sets.filter((s) => s.id !== setId) };
-      });
-      return { uiExercises };
-    });
+  skipRest: () => {
+    set({ sessionState: "ACTIVE" });
   },
 
   getPayloadLogs: () => {
