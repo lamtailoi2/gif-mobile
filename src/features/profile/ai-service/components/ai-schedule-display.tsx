@@ -28,7 +28,7 @@ export default function AiScheduleDisplay({
   if (!plan.schedule || plan.schedule.length === 0) {
     return (
       <View className="flex-1 justify-center items-center p-6">
-        <Text className="text-on-surface text-center">Không tìm thấy lịch tập hợp lệ.</Text>
+        <Text className="text-on-surface text-center">No valid workout plan found.</Text>
       </View>
     );
   }
@@ -53,7 +53,7 @@ export default function AiScheduleDisplay({
                 <MaterialIcons name="psychology" size={18} color="#4b8eff" />
               </View>
               <Text className="font-display font-bold text-on-surface text-sm">
-                🧠 Nhận định từ HLV AI
+                🧠 AI Coach Assessment
               </Text>
             </View>
             <MaterialIcons 
@@ -110,7 +110,7 @@ export default function AiScheduleDisplay({
         <MaterialIcons name="fitness-center" size={20} color="#4b8eff" />
         <View className="flex-1">
           <Text className="font-body text-[10px] uppercase tracking-[0.5px] text-[#4b8eff] font-bold">
-            Trọng tâm buổi tập
+            Session Focus
           </Text>
           <Text className="font-display text-base font-bold text-on-surface mt-0.5">
             {currentDaySchedule.focus}
@@ -155,7 +155,7 @@ export default function AiScheduleDisplay({
           >
             <MaterialIcons name="refresh" size={18} color="#4b8eff" />
             <Text className="font-body text-sm font-semibold text-[#4b8eff]">
-              Tạo lại lịch tập bằng AI
+              Regenerate AI Plan
             </Text>
           </Pressable>
         </View>

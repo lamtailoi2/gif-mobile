@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { getAllExercises } from "@/features/exercise-library/apis";
 import ExerciseLibraryList from "@/features/exercise-library/components/exercise-library-list";
 import { IExercise } from "@/features/exercise-library/types/exercise";
-import { generateWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
+import { generateWorkoutPlan, getAiWorkoutPlan, saveAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
 import { IWorkoutPlanResponse } from "@/features/profile/ai-service/types";
 import AiScheduleDisplay from "@/features/profile/ai-service/components/ai-schedule-display";
 import AppHeader from "@/components/app-header";
@@ -15,14 +15,17 @@ import { ActivityIndicator, View, Text, Pressable, ScrollView, Platform } from "
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+import { useQueryClient } from "@tanstack/react-query";
+import { EHomeQueryKeys } from "@/features/home/queries/key";
 
 // Persistence keys
-const PLAN_CACHE_KEY = "ai_workout_plan_cached";
+const getPlanCacheKey = (userId?: string) => userId ? `ai_workout_plan_cached_${userId}` : "ai_workout_plan_cached";
 
 export default function WorkoutScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"library" | "ai">("library");
   const [loadingAi, setLoadingAi] = useState(false);
   const [workoutPlan, setWorkoutPlan] = useState<IWorkoutPlanResponse | null>(null);
@@ -32,25 +35,43 @@ export default function WorkoutScreen() {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Load plan from cache
-        if (Platform.OS === "web") {
-          const cached = localStorage.getItem(PLAN_CACHE_KEY);
-          if (cached) setWorkoutPlan(JSON.parse(cached));
-        } else {
-          const cached = await SecureStore.getItemAsync(PLAN_CACHE_KEY);
-          if (cached) setWorkoutPlan(JSON.parse(cached));
-        }
-
         // Load exercise library
         const library = await getAllExercises();
         setExercises(library);
+
+        if (!user?.id) return;
+        const cacheKey = getPlanCacheKey(user.id);
+        let planFromCache: IWorkoutPlanResponse | null = null;
+
+        // Load plan from cache
+        if (Platform.OS === "web") {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) planFromCache = JSON.parse(cached);
+        } else {
+          const cached = await SecureStore.getItemAsync(cacheKey);
+          if (cached) planFromCache = JSON.parse(cached);
+        }
+
+        // Check Firestore if not in local cache
+        if (!planFromCache) {
+          planFromCache = await getAiWorkoutPlan(user.id);
+          if (planFromCache) {
+            if (Platform.OS === "web") {
+              localStorage.setItem(cacheKey, JSON.stringify(planFromCache));
+            } else {
+              await SecureStore.setItemAsync(cacheKey, JSON.stringify(planFromCache));
+            }
+          }
+        }
+
+        if (planFromCache) setWorkoutPlan(planFromCache);
       } catch (error) {
         console.error("Failed to load initialized data:", error);
       }
     };
 
     initializeData();
-  }, []);
+  }, [user?.id]);
 
   const handleExercisePress = (exercise: IExercise) => {
     router.push({
@@ -86,10 +107,19 @@ export default function WorkoutScreen() {
 
       // Save to state & local cache
       setWorkoutPlan(result);
-      if (Platform.OS === "web") {
-        localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(result));
-      } else {
-        await SecureStore.setItemAsync(PLAN_CACHE_KEY, JSON.stringify(result));
+      if (user?.id) {
+        const cacheKey = getPlanCacheKey(user.id);
+        if (Platform.OS === "web") {
+          localStorage.setItem(cacheKey, JSON.stringify(result));
+        } else {
+          await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        }
+        await saveAiWorkoutPlan(user.id, result);
+        
+        // Invalidate Home Dashboard cache so it fetches the newly created AI plan immediately
+        queryClient.invalidateQueries({
+          queryKey: [EHomeQueryKeys.GetHomeDashboard, user.id],
+        });
       }
     } catch (error) {
       console.error("AI Generation failed:", error);
@@ -129,7 +159,7 @@ export default function WorkoutScreen() {
               activeTab === "library" ? "text-[#283500]" : "text-on-surface-variant"
             }`}
           >
-            Thư viện bài tập
+            Exercise Library
           </Text>
         </Pressable>
         <Pressable
@@ -148,7 +178,7 @@ export default function WorkoutScreen() {
               activeTab === "ai" ? "text-[#283500]" : "text-on-surface-variant"
             }`}
           >
-            Lịch tập AI
+            AI Plan
           </Text>
         </Pressable>
       </View>
@@ -160,7 +190,7 @@ export default function WorkoutScreen() {
         <View className="flex-1 justify-center items-center p-gutter gap-4">
           <ActivityIndicator size="large" color="#abd600" />
           <Text className="text-on-surface font-body text-sm font-semibold text-center px-6 leading-6">
-            HLV AI đang phân tích thể chất & thiết lập lịch tập tối ưu cho bạn...
+            AI Coach is analyzing your metrics & creating an optimal workout plan...
           </Text>
         </View>
       ) : workoutPlan ? (
@@ -178,53 +208,53 @@ export default function WorkoutScreen() {
               <MaterialIcons name="psychology" size={36} color="#4b8eff" />
             </View>
             <Text className="font-display text-xl font-bold text-on-surface text-center">
-              HLV AI Cá Nhân Hóa
+              Personalized AI Coach
             </Text>
             <Text className="font-body text-sm text-center leading-5 text-on-surface-variant">
-              Tạo lịch tập thông minh dựa trên thông số cơ thể và mục tiêu riêng của bạn.
+              Create a smart workout plan based on your body metrics and specific goals.
             </Text>
             
             {/* User profile parameters summary */}
             <View className="w-full bg-surface-container-low/40 border border-surface-variant/10 p-4 rounded-xl gap-2.5 my-2">
               <Text className="font-body text-xs text-on-surface-variant font-bold">
-                Thông số hiện tại của bạn:
+                Your current metrics:
               </Text>
               <View className="flex-row justify-between border-b border-surface-variant/10 pb-2">
-                <Text className="font-body text-xs text-on-surface-variant">Mục tiêu:</Text>
+                <Text className="font-body text-xs text-on-surface-variant">Goal:</Text>
                 <Text className="font-body text-xs text-on-surface font-bold">
                   {profile.goal === "lose_weight" 
-                    ? "Giảm cân" 
+                    ? "Lose Weight" 
                     : profile.goal === "build_muscle" 
-                      ? "Tăng cơ" 
+                      ? "Build Muscle" 
                       : profile.goal === "improve_endurance" 
-                        ? "Tăng thể lực" 
-                        : "Duy trì sức khỏe"}
+                        ? "Improve Endurance" 
+                        : "Maintain Health"}
                 </Text>
               </View>
               <View className="flex-row justify-between border-b border-surface-variant/10 pb-2">
-                <Text className="font-body text-xs text-on-surface-variant">Trình độ:</Text>
+                <Text className="font-body text-xs text-on-surface-variant">Level:</Text>
                 <Text className="font-body text-xs text-on-surface font-bold">
                   {profile.level === "beginner" 
-                    ? "Mới bắt đầu" 
+                    ? "Beginner" 
                     : profile.level === "intermediate" 
-                      ? "Trung bình" 
-                      : "Nâng cao"}
+                      ? "Intermediate" 
+                      : "Advanced"}
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="font-body text-xs text-on-surface-variant">Số ngày tập/tuần:</Text>
+                <Text className="font-body text-xs text-on-surface-variant">Days per week:</Text>
                 <Text className="font-body text-xs text-on-surface font-bold">
-                  {profile.daysPerWeek || 3} ngày
+                  {profile.daysPerWeek || 3} days
                 </Text>
               </View>
             </View>
 
             <Button onPress={handleRecommendPress} className="w-full mt-2">
-              Bắt đầu thiết lập lịch tập AI
+              Generate AI Plan
             </Button>
             
             <Text className="font-body text-[10px] text-on-surface-variant text-center opacity-60">
-              *Bạn có thể thay đổi mục tiêu ở tab Profile bất cứ lúc nào.
+              *You can change your goals in the Profile tab at any time.
             </Text>
           </View>
         </ScrollView>

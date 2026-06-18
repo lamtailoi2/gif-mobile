@@ -1,5 +1,7 @@
 import { getAllExercises } from "@/features/exercise-library/apis";
 import { IWorkoutPlanResponse } from "./types";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -37,12 +39,12 @@ export async function generateWorkoutPlan(
     daysPerWeek: profile.daysPerWeek,
   };
 
-  const prompt = `HLV thể lực. Tạo lịch tập JSON cho user:
+  const prompt = `Fitness Coach. Create JSON workout plan for user:
 ${JSON.stringify(p)}
-Bài tập (id,n=tên,c=category,d=độ khó,m=cơ,eq=thiết bị,s=sets,r=reps):
+Exercises (id,n=name,c=category,d=difficulty,m=muscles,eq=equipment,s=sets,r=reps):
 ${JSON.stringify(exerciseList)}
-Chỉ dùng bài tập trong danh sách. Chỉ trả về JSON, không giải thích:
-{"userAssessment":"...","schedule":[{"day":"Ngày 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
+Use only exercises from the list. Return ONLY JSON, no explanation:
+{"userAssessment":"...","schedule":[{"day":"Day 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
 
   const response = await fetch(GROQ_API_URL, {
     method: "POST",
@@ -76,4 +78,26 @@ Chỉ dùng bài tập trong danh sách. Chỉ trả về JSON, không giải th
     console.error("Failed to parse response:", generatedText, error);
     throw new Error("Failed to parse AI response as JSON.");
   }
+}
+
+export async function saveAiWorkoutPlan(userId: string, plan: IWorkoutPlanResponse): Promise<void> {
+  try {
+    const docRef = doc(db, "user_ai_plans", userId);
+    await setDoc(docRef, { ...plan, updatedAt: new Date().toISOString() }, { merge: true });
+  } catch (error) {
+    console.error("Failed to save AI plan to Firestore:", error);
+  }
+}
+
+export async function getAiWorkoutPlan(userId: string): Promise<IWorkoutPlanResponse | null> {
+  try {
+    const docRef = doc(db, "user_ai_plans", userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as IWorkoutPlanResponse;
+    }
+  } catch (error) {
+    console.error("Failed to get AI plan from Firestore:", error);
+  }
+  return null;
 }

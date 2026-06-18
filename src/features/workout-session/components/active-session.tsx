@@ -1,76 +1,161 @@
 import AppHeader from "@/components/app-header";
+import { isTimeBasedExercise } from "@/features/workout-session/utils/exercise-type";
 import { useRoutineWithExercises } from "@/features/workout-session/hooks/use-routine-with-exercises";
 import { useWorkoutSessionStore } from "@/features/workout-session/store/use-workout-session-store";
+import { useGetLatestLogs } from "@/features/history/queries/use-get-latest-logs";
 import { useUser } from "@clerk/expo";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, TextInput, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle } from "react-native-svg";
+import * as Speech from "expo-speech";
+import * as Haptics from "expo-haptics";
+import { useKeepAwake } from "expo-keep-awake";
 
-const MAX_REST_TIME = 105; // 1:45 mặc định
+// Constants
+const PREPARE_TIME = 10;
+const REST_TIME = 30;
 
 interface IActiveSessionProps {
   routineId: string;
 }
 
 export default function ActiveSession({ routineId }: IActiveSessionProps) {
+  useKeepAwake(); // Keep screen awake
   const router = useRouter();
   const { user } = useUser();
 
-  // Load routine + exercises từ Firestore
-  const { data, isLoading, isError } = useRoutineWithExercises(routineId);
+  const { data: routineData, isLoading: isRoutineLoading, isError: isRoutineError } = useRoutineWithExercises(routineId);
+  const { data: historyLogs, isLoading: isHistoryLoading } = useGetLatestLogs();
 
-  // Zustand store
   const {
-    routine,
     exercises,
+    uiExercises,
+    sessionState,
     currentExerciseIndex,
     currentSetIndex,
     startSession,
-    completeSet,
+    startWorkout,
+    completeCurrentSet,
+    skipRest,
+    updateSet,
   } = useWorkoutSessionStore();
 
-  // Chỉ gọi startSession một lần khi data sẵn sàng
   const sessionStartedRef = useRef(false);
+  const [timeLeft, setTimeLeft] = useState(PREPARE_TIME);
+  const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
+  const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
+
+  // Initialize Session
   useEffect(() => {
-    if (data && !sessionStartedRef.current) {
-      startSession(data.routine, data.exercises);
+    if (routineData && !isHistoryLoading && !sessionStartedRef.current) {
+      startSession(routineData.routine, routineData.exercises, historyLogs || []);
       sessionStartedRef.current = true;
     }
-  }, [data, startSession]);
+  }, [routineData, isHistoryLoading, historyLogs, startSession]);
 
-  // Rest timer
-  const [timeLeft, setTimeLeft] = useState<number>(MAX_REST_TIME);
-  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-
-  // Weight & Reps — reset khi chuyển exercise
-  const currentExercise = exercises[currentExerciseIndex];
-  const [weight, setWeight] = useState<number>(45);
-  const [reps, setReps] = useState<number>(10);
-
+  // Reset timer when state changes
   useEffect(() => {
-    if (currentExercise) {
-      setReps(currentExercise.defaultReps);
-      setWeight(45);
-      setTimeLeft(MAX_REST_TIME);
-      setIsTimerRunning(false);
+    if (sessionState === "COMPLETED") {
+      router.replace("/(tabs)/workout/session-complete");
+      return;
     }
-  }, [currentExerciseIndex, currentExercise]);
 
-  // Timer countdown
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (isTimerRunning && timeLeft > 0) {
-      intervalId = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    } else if (timeLeft === 0) {
-      setIsTimerRunning(false);
+    if (sessionState === "PREPARING") {
+      setTimeLeft(PREPARE_TIME);
+      if (uiExercises.length > 0) {
+        Speech.speak("Ready to go. " + uiExercises[0].exerciseName);
+      }
+    } else if (sessionState === "RESTING") {
+      setTimeLeft(REST_TIME);
+      const nextEx = uiExercises[currentExerciseIndex];
+      Speech.speak("Take a rest. Next up: " + (nextEx ? nextEx.exerciseName : ""));
     }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isTimerRunning, timeLeft]);
+  }, [sessionState, uiExercises, currentExerciseIndex, router]);
+
+  // Handle Countdown Timer
+  useEffect(() => {
+    if (sessionState !== "PREPARING" && sessionState !== "RESTING") return;
+
+    if (timeLeft <= 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Speech.speak("Start!");
+      if (sessionState === "PREPARING") {
+        startWorkout();
+      } else if (sessionState === "RESTING") {
+        skipRest();
+      }
+      return;
+    }
+
+    // Audio/Haptic cues for last 3 seconds
+    if (timeLeft === 3 || timeLeft === 2 || timeLeft === 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      Speech.speak(timeLeft.toString());
+    }
+
+    const timerId = setTimeout(() => {
+      setTimeLeft(timeLeft - 1);
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [timeLeft, sessionState, startWorkout, skipRest]);
+
+  const currentEx = uiExercises[currentExerciseIndex];
+  const currentSet = currentEx?.sets[currentSetIndex];
+  const fullExercise = exercises.find((e) => e.id === currentEx?.exerciseId);
+  const isTimeBased = isTimeBasedExercise(fullExercise);
+
+  // Initialize Exercise Timer
+  useEffect(() => {
+    if (sessionState === "ACTIVE" && isTimeBased && currentSet) {
+      setExerciseTimeLeft(currentSet.reps); // reps serves as seconds
+      setIsExerciseTimerRunning(false);
+    }
+  }, [sessionState, isTimeBased, currentEx?.exerciseId, currentSet?.id]);
+
+  // Exercise Timer tick
+  useEffect(() => {
+    if (sessionState !== "ACTIVE" || !isTimeBased || !isExerciseTimerRunning) return;
+
+    if (exerciseTimeLeft <= 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Speech.speak("Set complete!");
+      setIsExerciseTimerRunning(false);
+      setTimeout(() => completeCurrentSet(), 0);
+      return;
+    }
+
+    if (exerciseTimeLeft === 3 || exerciseTimeLeft === 2 || exerciseTimeLeft === 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      Speech.speak(exerciseTimeLeft.toString());
+    }
+
+    const timerId = setTimeout(() => setExerciseTimeLeft(t => t - 1), 1000);
+    return () => clearTimeout(timerId);
+  }, [exerciseTimeLeft, isExerciseTimerRunning, sessionState, isTimeBased, completeCurrentSet]);
+
+  const handleCompleteSet = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    completeCurrentSet();
+  };
+
+  if (isRoutineLoading || isHistoryLoading || uiExercises.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#abd600" />
+      </SafeAreaView>
+    );
+  }
+
+  if (isRoutineError) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center px-container-mobile">
+        <Text className="text-error">Error loading routine.</Text>
+      </SafeAreaView>
+    );
+  }
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -78,233 +163,172 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // SVG ring
-  const cx = 110, cy = 110, radius = 96, strokeWidth = 7;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - timeLeft / MAX_REST_TIME);
+  // --- RENDERS ---
 
-  const handleCompleteSet = () => {
-    const isDone = completeSet(weight, reps);
-    if (isDone) {
-      router.replace("/(tabs)/workout/session-complete");
-    } else {
-      setTimeLeft(MAX_REST_TIME);
-      setIsTimerRunning(true);
-    }
-  };
-
-  // ── Loading state ──────────────────────────────────────────────────────────
-  if (isLoading) {
+  if (sessionState === "PREPARING") {
     return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#abd600" />
-        <Text className="font-mono text-label-caps text-on-surface-variant/40 mt-4 tracking-widest">
-          LOADING SESSION...
-        </Text>
-      </SafeAreaView>
-    );
-  }
-
-  // ── Invalid / Error state ──────────────────────────────────────────────────
-  if (!routineId || isError || !data) {
-    return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center px-container-mobile">
-        <MaterialIcons name="error-outline" size={48} color="#ffb4ab" />
-        <Text className="font-display text-body-lg font-bold text-error mt-4 text-center">
-          {!routineId ? "No routine selected" : "Could not load workout"}
-        </Text>
-        <Text className="font-body text-body-md text-on-surface-variant/60 mt-2 text-center">
-          {!routineId
-            ? "Go back and select a routine to start."
-            : "Check your connection and try again."}
+      <SafeAreaView className="flex-1 bg-electric-blue items-center justify-center" edges={["top", "bottom"]}>
+        <Text className="font-display text-[40px] font-bold text-background mb-8">Ready to go</Text>
+        <View className="items-center bg-surface-container/20 px-8 py-12 rounded-full mb-8">
+          <Text className="font-mono text-[80px] font-bold text-background">{timeLeft}</Text>
+        </View>
+        <Text className="font-display text-body-lg text-background/80">Next Exercise</Text>
+        <Text className="font-display text-headline-sm font-bold text-background text-center mt-2 px-6">
+          {currentEx?.exerciseName}
         </Text>
         <Pressable
-          onPress={() => router.back()}
-          className="mt-6 px-6 py-3 rounded-xl bg-surface-container border border-surface-variant/20 active:opacity-70"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            startWorkout();
+          }}
+          className="absolute bottom-16 px-12 py-4 bg-background rounded-full active:opacity-80"
         >
-          <Text className="font-display text-body-md font-bold text-on-surface">
-            Go Back
-          </Text>
+          <Text className="font-display text-body-lg font-bold text-electric-blue">Skip</Text>
         </Pressable>
       </SafeAreaView>
     );
   }
 
-  // ── Store sync (brief flash after data arrives, before useEffect fires) ────
-  if (!currentExercise) {
+  if (sessionState === "RESTING") {
     return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#abd600" />
-        <Text className="font-mono text-label-caps text-on-surface-variant/40 mt-4 tracking-widest">
-          PREPARING SESSION...
+      <SafeAreaView className="flex-1 bg-neon-green items-center justify-center" edges={["top", "bottom"]}>
+        <Text className="font-display text-[40px] font-bold text-background mb-8">Rest</Text>
+        <View className="items-center bg-surface-container/20 px-8 py-12 rounded-full mb-8">
+          <Text className="font-mono text-[80px] font-bold text-background">{formatTime(timeLeft)}</Text>
+        </View>
+        
+        <View className="flex-row gap-4 mb-8">
+          <Pressable
+            onPress={() => setTimeLeft((t) => t + 20)}
+            className="px-6 py-4 bg-background/20 rounded-full active:bg-background/40"
+          >
+            <Text className="font-mono text-body-md font-bold text-background">+20s</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              skipRest();
+            }}
+            className="px-8 py-4 bg-background rounded-full active:opacity-80"
+          >
+            <Text className="font-display text-body-md font-bold text-neon-green">Skip Rest</Text>
+          </Pressable>
+        </View>
+
+        <Text className="font-display text-body-lg text-background/80">Next Up</Text>
+        <Text className="font-display text-headline-sm font-bold text-background text-center mt-2 px-6">
+          {currentEx?.exerciseName}
+        </Text>
+        <Text className="font-body text-body-md text-background/80 mt-1">
+          Set {currentSetIndex + 1} of {currentEx?.sets.length}
         </Text>
       </SafeAreaView>
     );
   }
 
-  const totalSets = currentExercise.defaultSets;
-  const totalExercises = exercises.length;
-  const isLastSetOfLastExercise =
-    currentSetIndex >= totalSets - 1 &&
-    currentExerciseIndex >= totalExercises - 1;
-  const isLastSetOfExercise = currentSetIndex >= totalSets - 1;
-
-  const ctaLabel = isLastSetOfLastExercise
-    ? "Finish Session"
-    : isLastSetOfExercise
-    ? "Next Exercise →"
-    : "Complete Set";
-
-  // ── Main UI ───────────────────────────────────────────────────────────────
+  // sessionState === "ACTIVE"
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <AppHeader avatarUrl={user?.imageUrl} />
+      
+      {/* Progress Bar */}
+      <View className="px-container-mobile pt-2 pb-4">
+        <View className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+          <View 
+            className="h-full bg-neon-green rounded-full" 
+            style={{ width: `${((currentExerciseIndex) / uiExercises.length) * 100}%` }} 
+          />
+        </View>
+        <Text className="font-mono text-label-caps text-on-surface-variant text-center mt-2 tracking-widest">
+          EXERCISE {currentExerciseIndex + 1} OF {uiExercises.length}
+        </Text>
+      </View>
 
-      <View className="flex-1 px-container-mobile justify-between pt-stack-sm pb-4">
-
-        {/* Exercise & Set Header */}
-        <View className="items-center gap-1">
-          <Text className="font-mono text-label-caps text-neon-green/70 tracking-[0.12em]">
-            EXERCISE {currentExerciseIndex + 1} / {totalExercises}
-          </Text>
-          <Text className="font-display text-headline-lg font-bold text-on-surface text-center">
-            {currentExercise.name}
-          </Text>
-          <Text className="font-mono text-label-caps text-secondary tracking-[0.1em]">
-            SET {currentSetIndex + 1} OF {totalSets}
-          </Text>
-          {routine && (
-            <Text className="font-body text-[12px] text-on-surface-variant/35 mt-0.5">
-              {routine.name} · {routine.focus}
-            </Text>
+      <View className="flex-1 px-container-mobile">
+        {/* Exercise Image/Video Placeholder */}
+        <View className="w-full h-64 bg-surface-container-high rounded-3xl items-center justify-center overflow-hidden mb-6">
+          {currentEx?.thumbnailUrl ? (
+            <Image source={{ uri: currentEx.thumbnailUrl }} className="w-full h-full" resizeMode="cover" />
+          ) : (
+            <MaterialCommunityIcons name="image-outline" size={64} color="#e5e2e1" opacity={0.2} />
           )}
         </View>
 
-        {/* Rest Timer Ring */}
-        <View className="items-center justify-center">
+        {/* Exercise Info */}
+        <View className="items-center mb-8">
+          <Text className="font-display text-headline-md font-bold text-on-surface text-center">
+            {currentEx?.exerciseName}
+          </Text>
+          <Text className="font-body text-body-lg text-neon-green mt-2 font-bold">
+            Set {currentSetIndex + 1} / {currentEx?.sets.length}
+          </Text>
+        </View>
+
+        {/* Hybrid Tracker (Weight/Reps) vs Timer */}
+        {currentSet && (
+          isTimeBased ? (
+            <View className="items-center justify-center mb-12 gap-6 mt-4">
+              <View className={`items-center px-10 py-12 rounded-full border-[3px] ${isExerciseTimerRunning ? 'bg-[#abd600]/10 border-[#abd600]' : 'bg-surface-container/30 border-surface-variant/30'}`}>
+                <Text className="font-mono text-[80px] font-bold text-on-surface">
+                  {formatTime(exerciseTimeLeft)}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setIsExerciseTimerRunning(!isExerciseTimerRunning);
+                }}
+                className={`px-12 py-5 rounded-full active:opacity-80 flex-row items-center gap-3 ${isExerciseTimerRunning ? 'bg-error/20' : 'bg-neon-green/20'}`}
+              >
+                <MaterialIcons name={isExerciseTimerRunning ? "pause" : "play-arrow"} size={28} color={isExerciseTimerRunning ? "#ff5449" : "#abd600"} />
+                <Text className={`font-display text-title-lg font-bold tracking-wider ${isExerciseTimerRunning ? 'text-error' : 'text-neon-green'}`}>
+                  {isExerciseTimerRunning ? "PAUSE" : "START"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View className="flex-row items-center justify-center gap-6 mb-12">
+              <View className="items-center">
+                <Text className="font-mono text-label-caps text-on-surface-variant mb-2 tracking-widest">LBS</Text>
+                <View className="bg-surface-container rounded-2xl w-24 h-16 items-center justify-center border border-surface-variant/20">
+                  <TextInput
+                    keyboardType="numeric"
+                    value={currentSet.weight.toString()}
+                    onChangeText={(val) => updateSet(currentEx.exerciseId, currentSet.id, "weight", Number(val))}
+                    className="font-display text-title-lg font-bold text-on-surface text-center w-full"
+                    selectTextOnFocus
+                  />
+                </View>
+              </View>
+              
+              <Text className="font-display text-headline-sm text-on-surface-variant/30 mt-6">×</Text>
+              
+              <View className="items-center">
+                <Text className="font-mono text-label-caps text-on-surface-variant mb-2 tracking-widest">REPS</Text>
+                <View className="bg-surface-container rounded-2xl w-24 h-16 items-center justify-center border border-surface-variant/20">
+                  <TextInput
+                    keyboardType="numeric"
+                    value={currentSet.reps.toString()}
+                    onChangeText={(val) => updateSet(currentEx.exerciseId, currentSet.id, "reps", Number(val))}
+                    className="font-display text-title-lg font-bold text-on-surface text-center w-full"
+                    selectTextOnFocus
+                  />
+                </View>
+              </View>
+            </View>
+          )
+        )}
+
+        <View className="flex-1 justify-end pb-8">
           <Pressable
-            onPress={() => setIsTimerRunning((r) => !r)}
-            style={{ width: 220, height: 220 }}
-            className="items-center justify-center relative active:scale-[0.98]"
-            accessibilityLabel={isTimerRunning ? "Pause timer" : "Start rest timer"}
+            onPress={handleCompleteSet}
+            className="bg-neon-green rounded-full py-5 items-center justify-center shadow-sm active:opacity-80 active:scale-95"
           >
-            {/* Glow blob */}
-            <View
-              style={{
-                position: "absolute",
-                width: 160,
-                height: 160,
-                borderRadius: 80,
-                backgroundColor: "rgba(75, 142, 255, 0.08)",
-              }}
-            />
-            {/* SVG arc */}
-            <Svg width="220" height="220" viewBox="0 0 220 220" style={{ position: "absolute" }}>
-              <Circle cx={cx} cy={cy} r={radius} stroke="#1c1b1b" strokeWidth={strokeWidth} fill="none" />
-              <Circle
-                cx={cx} cy={cy} r={radius}
-                stroke="#4b8eff" strokeWidth={strokeWidth} fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                transform={`rotate(-90 ${cx} ${cy})`}
-              />
-            </Svg>
-            {/* Time display */}
-            <View className="items-center justify-center">
-              <Text style={{ fontFamily: "JetBrains Mono", fontSize: 44, fontWeight: "700", color: "#e5e2e1", letterSpacing: -1 }}>
-                {formatTime(timeLeft)}
-              </Text>
-              <Text className="font-mono text-label-caps text-on-surface-variant/40 tracking-[0.15em] mt-1">
-                {isTimerRunning ? "REST TIME" : "PAUSED"}
-              </Text>
-            </View>
-          </Pressable>
-
-          {timeLeft > 0 && (
-            <Pressable
-              onPress={() => { setTimeLeft(0); setIsTimerRunning(false); }}
-              className="mt-3 px-5 py-1.5 active:opacity-60"
-            >
-              <Text className="font-mono text-[10px] text-on-surface-variant/40 uppercase tracking-widest">
-                Skip Rest
-              </Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Weight & Reps */}
-        <View className="flex-row gap-3">
-          {/* Weight */}
-          <View className="flex-1 bg-surface-container/60 border border-surface-variant/20 rounded-xl px-4 py-3 gap-2">
-            <Text className="font-mono text-label-caps text-on-surface-variant/50 tracking-[0.1em]">WEIGHT (LBS)</Text>
-            <View className="flex-row items-center justify-between">
-              <Pressable
-                onPress={() => setWeight((w) => Math.max(5, w - 5))}
-                className="w-8 h-8 items-center justify-center rounded-full bg-surface-container-high active:opacity-70"
-              >
-                <MaterialIcons name="remove" size={18} color="#e5e2e1" />
-              </Pressable>
-              <Text className="font-display text-[28px] font-bold text-on-surface">{weight}</Text>
-              <Pressable
-                onPress={() => setWeight((w) => w + 5)}
-                className="w-8 h-8 items-center justify-center rounded-full bg-surface-container-high active:opacity-70"
-              >
-                <MaterialIcons name="add" size={18} color="#e5e2e1" />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Reps */}
-          <View className="flex-1 bg-surface-container/60 border border-surface-variant/20 rounded-xl px-4 py-3 gap-2">
-            <Text className="font-mono text-label-caps text-on-surface-variant/50 tracking-[0.1em]">REPS</Text>
-            <View className="flex-row items-center justify-between">
-              <Pressable
-                onPress={() => setReps((r) => Math.max(1, r - 1))}
-                className="w-8 h-8 items-center justify-center rounded-full bg-surface-container-high active:opacity-70"
-              >
-                <MaterialIcons name="remove" size={18} color="#e5e2e1" />
-              </Pressable>
-              <Text className="font-display text-[28px] font-bold text-on-surface">{reps}</Text>
-              <Pressable
-                onPress={() => setReps((r) => r + 1)}
-                className="w-8 h-8 items-center justify-center rounded-full bg-surface-container-high active:opacity-70"
-              >
-                <MaterialIcons name="add" size={18} color="#e5e2e1" />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        {/* AI Auto-Regulation hint */}
-        <View className="bg-surface-container/50 border border-surface-variant/20 rounded-xl px-4 py-3 flex-row items-start gap-3">
-          <View
-            className="w-3 h-3 rounded-full bg-neon-green mt-1 shrink-0"
-            style={{ shadowColor: "#abd600", shadowOpacity: 0.7, shadowRadius: 6, shadowOffset: { width: 0, height: 0 }, elevation: 4 }}
-          />
-          <View className="flex-1 gap-0.5">
-            <Text className="font-display text-body-md font-bold text-on-surface">AI Auto-Regulation</Text>
-            <Text className="font-body text-[13px] text-on-surface-variant/60 leading-5">
-              Feeling tired? Adjust weight or reps before completing the set.
+            <Text className="font-display text-title-md font-bold text-background uppercase tracking-wider">
+              Complete Set
             </Text>
-          </View>
+          </Pressable>
         </View>
-
-        {/* CTA */}
-        <Pressable
-          onPress={handleCompleteSet}
-          className="w-full bg-primary-fixed-dim rounded-xl py-4 flex-row justify-center items-center gap-2 active:opacity-85"
-          style={{ shadowColor: "#abd600", shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}
-          accessibilityLabel={ctaLabel}
-        >
-          <Text className="font-display text-body-lg font-bold text-on-primary-fixed">{ctaLabel}</Text>
-          <MaterialIcons
-            name={isLastSetOfLastExercise ? "check-circle" : "done"}
-            size={20}
-            color="#161e00"
-          />
-        </Pressable>
-
       </View>
     </SafeAreaView>
   );

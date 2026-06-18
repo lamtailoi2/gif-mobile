@@ -1,10 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native'; // Đổi TouchableOpacity thành View
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { IWorkoutSession } from '../types/history';
 
-export const WorkoutCard = ({ item }: { item: IWorkoutSession }) => {
+export const WorkoutCard = ({ item, onPress }: { item: IWorkoutSession; onPress?: () => void }) => {
     return (
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     {/* Dùng loại bài tập làm Tiêu đề luôn */}
@@ -19,7 +19,7 @@ export const WorkoutCard = ({ item }: { item: IWorkoutSession }) => {
                     <Text key={index} style={styles.muscleTag}>{muscle.toUpperCase()}</Text>
                 ))}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
