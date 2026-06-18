@@ -16,9 +16,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { IExercise } from "@/features/exercise-library/types/exercise";
 import { Spacing } from "@/constants/theme";
-
+import { useQuery } from "@tanstack/react-query";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { getExerciseGuide } from "../constants/exercise-guides";
+import { getExerciseGuideQuery } from "../queries";
 import MuscleVisualization from "./muscle-visualization";
 
 interface IExerciseGuideScreenProps {
@@ -31,7 +31,7 @@ export default function ExerciseGuideScreen({
   const theme = useTheme();
   const router = useRouter();
 
-  const guide = getExerciseGuide(exercise.id);
+  const { data: guide } = useQuery(getExerciseGuideQuery(exercise.id));
 
   const difficultyTone = useDifficultyTone(exercise.difficulty);
   const tabBarHeight = useBottomTabBarHeight();
@@ -239,8 +239,9 @@ export default function ExerciseGuideScreen({
               contentContainerClassName="gap-3 pr-gutter"
             >
               {guide.alternatives.map((alt, idx) => (
-                <View
+                <Pressable
                   key={idx}
+                  onPress={() => router.push(`/workout/guide/${alt.exerciseId}`)}
                   className="glass-card w-[280px] rounded-xl bg-surface-container/40 border border-white/10 overflow-hidden"
                 >
                   <Image
@@ -277,9 +278,9 @@ export default function ExerciseGuideScreen({
                       {alt.description}
                     </Text>
                   </View>
-                </View>
-              ))}
-            </ScrollView>
+                  </Pressable>
+                ))}
+              </ScrollView>
           </View>
         )}
       </ScrollView>

@@ -1,7 +1,9 @@
 import { useDifficultyTone } from "@/hooks/use-difficulty-tone";
 import { useTheme } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { memo } from "react";
+import { Pressable, Text, View } from "react-native";
 import { IExercise } from "../types/exercise";
 
 interface IExerciseCardProps {
@@ -9,7 +11,7 @@ interface IExerciseCardProps {
   onPress?: (exercise: IExercise) => void;
 }
 
-export default function ExerciseCard({
+const ExerciseCard = memo(function ExerciseCard({
   exercise,
   onPress,
 }: IExerciseCardProps) {
@@ -31,7 +33,8 @@ export default function ExerciseCard({
           <View className="w-[100px] h-[100px] shrink-0 overflow-hidden border-r border-surface-variant/25">
             <Image
               source={{ uri: exercise.thumbnailUrl }}
-              className="w-full h-full"
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
             />
           </View>
         )}
@@ -97,4 +100,6 @@ export default function ExerciseCard({
       </View>
     </Pressable>
   );
-}
+});
+
+export default ExerciseCard;
