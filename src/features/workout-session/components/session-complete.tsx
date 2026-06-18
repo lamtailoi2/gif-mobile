@@ -135,7 +135,7 @@ export default function SessionComplete() {
       {
         onSuccess: () => {
           resetSession();
-          router.replace("/(tabs)");
+          router.replace("/(tabs)/workout");
         },
         onError: () => {
           // Reset flag để user có thể retry
@@ -157,7 +157,10 @@ export default function SessionComplete() {
           Session Complete
         </Text>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => {
+            resetSession();
+            router.back();
+          }}
           className="w-10 h-10 justify-center items-center rounded-full bg-surface-container/60 border border-surface-variant/25 active:opacity-70"
           accessibilityLabel="Close screen"
         >
