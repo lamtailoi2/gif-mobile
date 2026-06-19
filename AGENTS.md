@@ -1,85 +1,198 @@
-Got it! Let's switch to English.
-
-Here is the updated project documentation, incorporating the strict requirements to use **Tailwind CSS** and the workflow rule to **always read designs and ask before coding**:
-
----
-
-# gif-app — Expo SDK 56 / React Native 0.85
+# gif-app — Expo SDK 55 / React Native 0.83.6
 
 ## Commands
 
-| Command           | Action                                            |
-| ----------------- | ------------------------------------------------- |
-| `npm start`       | Start Expo dev server                             |
-| `npm run web`     | Start for web                                     |
-| `npm run android` | Start for Android                                 |
-| `npm run ios`     | Start for iOS                                     |
-| `npm run lint`    | Run `expo lint` (no custom ESLint config in repo) |
+| Command | Action |
+|---------|--------|
+| `npm start` | Start Expo dev server |
+| `npm run web` | Start for web |
+| `npm run android` | Start for Android |
+| `npm run ios` | Start for iOS |
+| `npm run lint` | Run `expo lint` |
 
 No test framework is configured.
 
 ## Architecture
 
 - **Entrypoint**: `package.json` → `"main": "expo-router/entry"` (file-based routing)
-- **Routes**: `src/app/` — `_layout.tsx` (tab navigator), `index.tsx`, `explore.tsx`
-- **Components**: `src/components/` — `.web.tsx` variants override native implementations for web
-- **Styling**: **Tailwind CSS** must be used for styling UI components. Avoid standard `StyleSheet` where Tailwind utility classes can achieve the same result.
-- **Theme**: `src/constants/theme.ts` — light/dark colors, spacing scale, font definitions (integrate with Tailwind config).
-- **Hooks**: `src/hooks/` — `use-color-scheme.ts`, `use-theme.ts` (platform-aware)
-- **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (from tsconfig.json)
+- **Routes**: `src/app/` — `(auth)/`, `(onboarding)/`, `(tabs)/` with stack & tab navigators
+- **Styling**: **Tailwind CSS (NativeWind v4)** — `tailwind.config.js` extends with custom colors (neon-green, electric-blue), fonts (Montserrat, Inter, JetBrains Mono), custom font sizes, spacing scale, border radius. Uses `nativewind/preset` and `@gluestack-ui/nativewind-utils/tailwind-plugin`. Entry CSS: `src/global.css` (includes Google Fonts import). Babel: `jsxImportSource: "nativewind"` + `react-native-css-interop` + `react-native-reanimated/plugin`. Metro: `withNativeWind` wrapper + SVG transformer (`react-native-svg-transformer`).
+- **State Management**: **Zustand** for UI state (filters, onboarding drafts, session machine). **TanStack React Query** (`@tanstack/react-query 5.100.14`) for server-state caching & mutations.
+- **Validation**: **Zod** (`^4.4.3`) schemas + **react-hook-form** (`^7.76.1`) + `@hookform/resolvers` for forms (auth, onboarding).
+- **Theme**: `src/constants/theme.ts` — light/dark colors, spacing scale, font definitions.
+- **Hooks**: `src/hooks/` — `use-color-scheme.ts`, `use-theme.ts`, `use-difficulty-tone.ts`.
+- **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*`.
 
-## Naming Conventions
+## Routes
 
-- **Files & folders**: `kebab-case` for all `.ts` / `.tsx` files and directories (e.g. `exercise-card.tsx`, `use-exercises-filter.ts`, `exercise-library/`).
-- **React components**: `PascalCase` for the exported symbol — file is kebab-case, default export is PascalCase (e.g. `exercise-guide.tsx` exports `ExerciseGuide`).
-- **Hooks**: file `use-*.ts` (kebab-case), function `useFoo` (camelCase prefix), e.g. `use-exercises-filter.ts` → `useExerciseFilter`.
-- **Zustand stores**: file `use-*-store.ts`, hook `useFooStore` (e.g. `use-exercise-library-store.ts` → `useExerciseLibraryStore`).
-- **Interfaces**: `PascalCase` with `I` prefix (e.g. `IExercise`, `IExerciseCardProps`).
-- **Types**: `PascalCase` with `I` prefix for object-shape aliases (e.g. `IExerciseFilterParams`); union/utility aliases can stay plain `PascalCase` (e.g. `ThemeColor`).
-- **Enums**: `PascalCase` with `E` prefix (e.g. `ERecoveryState`, `EHomeQueryKeys`). Prefer `enum` over string-literal unions for closed sets so members can be referenced by name (`ERecoveryState.Recovered`).
-- **Constants**: `UPPERCASE` (`SCREAMING_SNAKE_CASE` when multi-word) for primitive values, e.g. `MAX_CONTENT_WIDTH`, `BOTTOM_TAB_INSET`. Grouped design-token objects keep `PascalCase` (`Colors`, `GIFColors`, `Spacing`, `Radius`).
-- **Functions**: `camelCase` and must start with a verb describing the action (e.g. `getAllExercises`, `parseArray`, `handleExercisePress`, `useExerciseFilter` — `use` itself is the verb for hooks). Avoid noun-only names like `exerciseData()`.
-- **Expo Router routes**: follow file-based routing conventions — `[id].tsx`, `_layout.tsx`, `(group)/` — kebab-case for static segments.
+| Group | File | Screen |
+|---|---|---|
+| `(auth)/` | `sign-in.tsx` | Sign-in (email/password + Google OAuth via Clerk) |
+| | `sign-up.tsx` | Sign-up (email + verification code + Google OAuth) |
+| `(onboarding)/` | `setup-profile.tsx` | Step 1: Personal info (name, gender, DOB, weight, height) |
+| | `setup-goal.tsx` | Step 2: Goals (fitness goal, experience level, days/week) |
+| `(tabs)/` | `index.tsx` | **Home Dashboard** — AI greeting, readiness gauge, streak, today's workout, recovery map |
+| | `coach.tsx` | **Coach** — Placeholder ("Coming soon...") |
+| | `profile.tsx` | **Profile** — Avatar, personal info, training goals, sign out |
+| | `workout/index.tsx` | **Workout Hub** — Exercise Library tab + AI Plan tab |
+| | `workout/[id].tsx` | Exercise detail (currently placeholder) |
+| | `workout/guide/[id].tsx` | Exercise guide (YouTube video, execution steps, mistakes, alternatives) |
+| | `workout/active-session.tsx` | Active workout session (state-machine driven, TTS, haptics, timer) |
+| | `workout/session-complete.tsx` | Session complete summary with energy/intensity ratings |
+| | `workout/create-plan.tsx` | AI plan generation via Groq API |
+| | `progress/index.tsx` | **Progress Dashboard** — consistency map, volume chart, recovery, AI insight |
+| | `progress/history.tsx` | Workout history (filters, search, pagination, calendar) |
+| | `progress/session-details.tsx` | Completed session detail with exercise logs |
 
-## Best Practices & Standard Utilities
-- **Firestore Collections**: NEVER hardcode collection names (e.g., `collection(db, "users")`). Always import and use the constants from `src/constants/collections.ts` (e.g., `ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`).
-- **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` to get the current date string, as it returns UTC time and breaks streaks/daily trackers. Always use the `getLocalDateString()` utility from `src/utils/date.ts`.
-- **Unit of Measurement**: The application is configured for the Vietnamese audience. Always use `kg` (kilograms) instead of `lbs` for weights.
+## Feature Modules
 
-## Development Workflow & Rules
+| Feature | Location | Description |
+|---|---|---|
+| **Auth** | `src/features/auth/` | Sign-in/sign-up forms with Zod validation, Clerk SSO (Google OAuth). Uses `react-hook-form`. |
+| **Onboarding** | `src/features/onboarding/` | 2-step wizard (profile → goals). Zustand draft store preserves state across steps. Saves to Clerk `unsafeMetadata`. |
+| **Home** | `src/features/home/` | Dashboard aggregating: AI greeting (time-of-day), readiness score (from last session recency + intensity), streak (consecutive days from last 30 sessions), today's workout card (AI plan or pre-set routine), muscle recovery map. |
+| **Exercise Library** | `src/features/exercise-library/` | Exercise catalog with search, muscle group pills, advanced filter (body parts, category, difficulty). Zustand filter store. 1hr React Query stale time. |
+| **Exercise Guide** | `src/features/exercise-guide/` | Exercise detail with YouTube embed (`react-native-youtube-iframe`), execution steps, common mistakes, alternatives, muscle visualization (`react-native-body-highlighter`). 30min stale time. |
+| **Workout Session** | `src/features/workout-session/` | Active session state machine (PREPARING → ACTIVE → RESTING → COMPLETED). Set tracking, rest timer, TTS voice guidance, haptics, keep-awake. Pre-fills weights from previous session. Saves to Firestore. |
+| **History** | `src/features/history/` | Paginated workout history with time view (Week/Month/All), date picker, search, type filter (PUSH/PULL/LEGS). Zustand filter store. Session details view. |
+| **Progress** | `src/features/progress/` | Analytics: 18-week consistency grid, volume-over-time chart, 7-day recovery/intensity chart, AI text insight, health metrics (HRV, sleep score). |
+| **Profile / AI** | `src/features/profile/` | Profile header, editable personal info & goals (reuses onboarding components). AI service uses Groq API (llama-3.3-70b-versatile) to generate personalized weekly workout plans, saved to `user_ai_plans` Firestore collection + SecureStore cache. |
 
-- **Design First**: Always read and analyze the provided design files carefully before implementing any UI.
-- **Ask Before Doing**: Do not make assumptions. Always ask for clarification or confirmation on logic, design details, or architecture before writing any code.
-- **Plan & Confirm First**: Always produce a clear implementation plan (steps, files to touch, components/hooks to create or change) and explicitly ask the user to confirm the plan before writing or editing any code. Do not start coding until the user approves.
+## UI Components
 
-## Key config
+### Shared (`src/components/`)
 
-- `tsconfig.json` extends `expo/tsconfig.base` with `strict: true`
-- `app.json`: scheme `gifapp`, web output `static`, plugins: `expo-router`, `expo-splash-screen`
-- Experiments: `typedRoutes: true`, `reactCompiler: true`
-- `.gitignore` excludes `/ios`, `/android` (generated native folders)
+| Component | Description |
+|---|---|
+| `AppHeader` | Top bar: avatar, title ("G.I.F"), notification bell (unwired) |
+| `AnimatedSplashOverlay` | Blue splash animation on launch (Reanimated keyframes) |
+| `AuthLoadingOverlay` | Full-screen loading with logo + animated progress bar |
+| `ThemedText` | `<Text>` wrapper with preset variants (title, subtitle, link, code, etc.) |
+| `ThemedView` | `<View>` wrapper with theme background color |
+| `ExternalLink` | Link opening in-app browser (`expo-web-browser`) |
+
+### UI Kit (`src/components/ui/`)
+
+| Component | Variants / Features |
+|---|---|
+| **Button** | Solid (neon green), outline (electric blue), link — Gluestack-style TVA |
+| **Input** | Focus border (electric blue), error state styling |
+| **Radio / RadioGroup** | Gluestack-based radio group with indicator |
+| **Select** | Bottom sheet modal with checkmark indicator |
+| **FilterTag** | Pill toggle (checked/unchecked) for filter UIs |
+| **Collapsible** | Expandable section with chevron + fade animation |
+| **Icon** | 40+ inline SVGs (Arrow, Bell, Calendar, Check, Clock, Close, Edit, Heart, Search, Settings, Star, Trash, etc.) |
+
+## Hooks
+
+| File | Purpose |
+|---|---|
+| `src/hooks/use-color-scheme.ts` | Re-exports `useColorScheme` from React Native |
+| `src/hooks/use-theme.ts` | Returns `Colors[scheme]` (light/dark colors from theme constants) |
+| `src/hooks/use-difficulty-tone.ts` | Returns Tailwind classes (bg, border, text) by difficulty (beginner=green, intermediate=orange, advanced=red) |
+| Feature hooks | `useHomeDashboard`, `useExercisesFilter`, `useFilteredExercisesCount`, `useRoutineWithExercises`, `useSaveWorkoutSession` |
+
+## Zustand Stores
+
+| Store | File | State Machine / State |
+|---|---|---|
+| `useExerciseLibraryStore` | `features/exercise-library/store/` | Filters (muscleGroup, bodyParts, category, difficulty), selectedExerciseId |
+| `useOnboardingDraftStore` | `features/onboarding/store/` | Hydrated flag, profile (step 1), goal/level/daysPerWeek (step 2) |
+| `useHistoryStore` | `features/history/store/` | TimeView, selectedDate, searchQuery, selectedFilter |
+| `useWorkoutSessionStore` | `features/workout-session/store/` | PREPARING → ACTIVE → RESTING → COMPLETED. Tracks routine, exercises, sets, sessionStartedAt, sessionSaved flag. Actions: startSession, updateSet, completeCurrentSet, skipRest, getPayloadLogs. |
+
+## React Query
+
+- **Key enums**: `EHomeQueryKeys`, `exerciseLibraryQueryKeys`, `exerciseGuideQueryKeys`, `EWorkoutSessionQueryKeys`, `historyQueryKey`, `progressQueryKey`
+- **Stale time**: Dashboards 5min, routines 1h, guides 30min, session details 10min
+- **Mutations**: `useSaveWorkoutSession` (injects userId from Clerk, writes to `workout_sessions`)
+- Invalidates: home dashboard queries after session save
+
+## Key Interfaces & Enums
+
+| File | Exports |
+|---|---|
+| `src/interfaces/profile.interface.ts` | `IUserProfile` (gender, dateOfBirth, weightKg, heightCm, goal, level, daysPerWeek, onboarded) |
+| `src/interfaces/workout-routine.interface.ts` | `IWorkoutRoutine` (name, focus, durationMin, intensity, load, exerciseIds, muscleGroups, dayOfWeek) |
+| `src/interfaces/workout-session.interface.ts` | `IWorkoutSession`, `IExerciseLog`, `ISetLog`, `EnergyLevel` (drained \| steady \| charged) |
+| `src/constants/profile.constant.ts` | `EFitnessGoal` (LoseWeight/BuildMuscle/ImproveEndurance/GeneralFitness), `EExperienceLevel` (Beginner/Intermediate/Advanced), `EGender` (Male/Female/Other) |
+| `src/features/exercise-library/types/exercise.ts` | `IExercise` (name, slug, category, muscleGroups, equipment, difficulty, defaultSets, defaultReps) |
+| `src/features/exercise-guide/types/guide.ts` | `IExerciseGuide`, `IExecutionStep`, `IMistake`, `IAlternativeExercise` |
+| `src/features/home/types/dashboard.ts` | `ERecoveryState` (Recovered \| Fatigued), `MuscleSlug`, `IReadiness`, `IStreak`, `ITodaysWorkout`, `IRecoveryMap` |
+| `src/features/history/types/history.ts` | `EIntensity` (HighIntensity \| Intense \| Normal) |
+| `src/features/progress/types/progress.ts` | `IProgressDashboardData`, `IRecoveryItem`, `IHealthMetrics`, `IAiInsight` |
+| `src/features/profile/ai-service/types.ts` | `IGeneratedExercise`, `IDaySchedule`, `IWorkoutPlanResponse` |
+
+## Core Libraries
+
+| File | Purpose |
+|---|---|
+| `src/lib/firebase.ts` | `initializeApp` + `getFirestore()` → exports `db` |
+| `src/lib/clerk.ts` | Token cache using `expo-secure-store` (graceful no-op on web) |
+| `src/lib/env.ts` | Reads `EXPO_PUBLIC_*` env vars for Clerk + Firebase |
+| `src/lib/profile.ts` | `getUserProfile()`, `isProfileComplete()`, `isOnboarded()`, `getNextOnboardingStep()`, option arrays (GOAL_OPTIONS, GENDER_OPTIONS, LEVEL_OPTIONS, DAYS_OPTIONS) |
+| `src/lib/get-youtube-video-id.ts` | Extracts YouTube video ID from URL |
+| `src/context/auth-loading-context.tsx` | `AuthLoadingProvider` + `useAuthLoading` (boolean loading state) |
+
+## Config
+
+| File | Details |
+|---|---|
+| `tsconfig.json` | Extends `expo/tsconfig.base` with `strict: true`, path aliases `@/` → `src/*` |
+| `app.json` | Scheme `gifapp`, web output `static`, plugins: `expo-router`, `expo-splash-screen`, `@clerk/expo`, `expo-web-browser` |
+| `tailwind.config.js` | 3.4.17. Extends NativeWind preset with custom colors (surface, primary/neon-green, secondary/electric-blue, tertiary, error), fonts (Montserrat/Inter/JetBrains Mono), font sizes (display-lg 48px → stat-value 24px), spacing (container-mobile 20px, gutter 16px, stack-sm/md/lg), border radius (sm → xl → full). Plugin: `@gluestack-ui/nativewind-utils/tailwind-plugin` |
+| `babel.config.js` | `babel-preset-expo` with `jsxImportSource: "nativewind"`, plugins: `react-native-css-interop/dist/babel-plugin`, `react-native-reanimated/plugin` |
+| `metro.config.js` | `withNativeWind(config, { input: "./src/global.css" })`, SVG transformer via `react-native-svg-transformer` |
+| `src/global.css` | Tailwind directives + Google Fonts import (Montserrat, Inter, JetBrains Mono) |
+| `experiments` | `typedRoutes: true` |
+| `.gitignore` | Excludes `/ios`, `/android` (generated native folders) |
 
 ## Tooling
 
-- **No tests, no CI**, no Prettier config — only auto-fix on save from VSCode settings
-- VS Code extension: `expo.vscode-expo-tools` (recommended) + Tailwind CSS IntelliSense.
-- `npm run reset-project` moves `/src` → `/example` and scaffolds a blank project
+- **No tests, no CI**, no Prettier config
+- VS Code extensions: `expo.vscode-expo-tools`, Tailwind CSS IntelliSense
+- `npm run reset-project` moves `/src` → `/example` and scaffolds blank project
 
 ## Platform variants
 
-Native tab bar uses `expo-router/unstable-native-tabs`; web tab bar uses `expo-router/ui`.
-Platform-specific component files follow `.web.tsx` suffix convention.
+- Native tab bar: `expo-router/unstable-native-tabs`; web tab bar: `expo-router/ui`
+- Platform-specific component files: `.web.tsx` suffix
+- Key platform-aware libraries: `react-native-svg`, `react-native-youtube-iframe`, `react-native-webview`, `react-native-body-highlighter`
 
-## Auth & Firestore
+## Auth & Data
 
-- **Auth**: Clerk with email/password + Google OAuth. Wired in `src/app/_layout.tsx` via `<ClerkProvider>`.
-- Signed-out users see `src/app/sign-in.tsx`; signed-in users see `<AppTabs>`.
-- Token cache uses `expo-secure-store` (graceful no-op on web).
+- **Auth**: Clerk with email/password + Google OAuth. Wired via `<ClerkProvider>` in root `_layout.tsx`. Token cache via `expo-secure-store` (no-op on web).
+- **Signed-out users**: `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`
+- **Signed-in users**: Main tabs; onboarding guard redirects to `(onboarding)/` if profile incomplete, home if already onboarded.
+- **Firestore**: JS SDK (`firebase 12.13.0`) in `src/lib/firebase.ts` → exports `db`. Collections: `workout_routines`, `workout_sessions`, `exercise_library`, `exercise_guides`, `user_ai_plans`. Optimize with `orderBy()` and `limit()`.
+- **AI Integration**: Groq API (llama-3.3-70b-versatile) in `src/features/profile/ai-service/` — generates personalized weekly workout plans, saves to `user_ai_plans` (Firestore) + `expo-secure-store` cache. Requires `EXPO_PUBLIC_GROQ_API_KEY`.
 
-- **Firestore**: Initialized in `src/lib/firebase.ts` — exports `db` via `getFirestore()`. JS SDK (works in Expo Go). All data fetching should be optimized with `orderBy()` and `limit()` where possible to minimize reads.
-- **Credentials**: Set `EXPO_PUBLIC_*` vars in `.env` (copy `.env.example`). Expo SDK 56 inlines `EXPO_PUBLIC_*` vars at bundle time — no manual config loading needed.
-- **AI Integration**: The app uses the Groq API (Llama 3.1) in `src/features/profile/ai-service/` for generating personalized workout plans. Requires `EXPO_PUBLIC_GROQ_API_KEY`.
+## Known Issues & Edge Cases
 
----
+| Issue | Impact | Location |
+|---|---|---|
+| **Date inconsistency** | Progress (`toISOString().split('T')[0]`, UTC) and History (`completedAt.split('T')[0]`) use UTC while Home dashboard uses `getLocalDateString()` (local time). Breaks date matching for streak/today's workout checks. | `progress/apis/index.tsx:75`, `history/apis/index.ts:43` |
+| **Missing exercise IDs** | AI-generated or deleted exercise IDs are silently filtered in `getRoutineWithExercises` — user sees a workout with missing exercises and no feedback. | `workout-session/apis/routines.ts:59-66` |
+| `completedAt` guard | `getWorkoutHistory` filters out docs without `completedAt`, but `saveWorkoutSession` has no validation — could save incomplete data. | `history/apis/index.ts:36` |
+| **Session double-save** | `sessionSaved` flag lives in Zustand memory — if app crashes after flag set but before navigation, flag resets → user can save duplicate session. | `workout-session/store/use-workout-session-store.ts:32` |
 
-I have saved these architectural and workflow rules to the project context. Whenever you are ready, please share the design file or requirements for the next feature, and we will analyze it together before executing!
+## Naming Conventions
+
+- **Files & folders**: `kebab-case` (e.g. `exercise-card.tsx`, `use-exercises-filter.ts`)
+- **React components**: `PascalCase` export, kebab-case file (e.g. `exercise-guide.tsx` → `ExerciseGuide`)
+- **Hooks**: file `use-*.ts`, hook `useFoo`
+- **Zustand stores**: file `use-*-store.ts`, hook `useFooStore`
+- **Interfaces**: `I` prefix (`IExercise`, `IUserProfile`)
+- **Types**: `I` prefix for object shapes; plain `PascalCase` for unions/utilities
+- **Enums**: `E` prefix (`ERecoveryState`, `EFitnessGoal`); prefer `enum` over string unions
+- **Constants**: `SCREAMING_SNAKE_CASE` for primitives; `PascalCase` for grouped objects (`Colors`, `Spacing`)
+- **Functions**: `camelCase`, must start with verb (`getAllExercises`, `handleExercisePress`)
+
+## Best Practices
+
+- **Firestore Collections**: NEVER hardcode names — use constants from `src/constants/collections.ts` (`ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`, `EXERCISE_LIBRARY_COLLECTION`, `GUIDES_COLLECTION`, `USER_AI_PLANS_COLLECTION`).
+- **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` — use `getLocalDateString()` from `src/utils/date.ts`. Note: this rule is currently violated in Progress and History.
+- **Unit**: Always `kg` (Vietnamese audience).
+- **Design First**: Read designs before implementing UI.
+- **Ask Before Doing**: Confirm logic/design before coding.
+- **Plan & Confirm**: Produce plan first, get approval before writing code.
