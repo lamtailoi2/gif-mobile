@@ -1,6 +1,7 @@
 // src/features/progress/apis/index.ts
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IProgressDashboardData } from '../types/progress';
 
 /**
@@ -48,7 +49,7 @@ export const getProgressDashboard = async (userId: string): Promise<IProgressDas
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
 
-        const sessionsRef = collection(db, 'workout_sessions');
+        const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
         const q = query(
             sessionsRef,
             where('userId', '==', userId),

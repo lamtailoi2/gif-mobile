@@ -6,7 +6,7 @@ import { useGetLatestLogs } from "@/features/history/queries/use-get-latest-logs
 import { useUser } from "@clerk/expo";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Speech from "expo-speech";
@@ -141,6 +141,11 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
     completeCurrentSet();
   };
 
+  const handleExit = useCallback(() => {
+    setIsExerciseTimerRunning(false);
+    router.back();
+  }, [router]);
+
   if (isRoutineLoading || isHistoryLoading || uiExercises.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center">
@@ -229,7 +234,18 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
   // sessionState === "ACTIVE"
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <AppHeader avatarUrl={user?.imageUrl} />
+      <View className="flex-row justify-between items-center px-container-mobile py-4">
+        <Pressable
+          onPress={handleExit}
+          className="w-10 h-10 items-center justify-center rounded-full bg-surface-container active:opacity-70"
+        >
+          <MaterialIcons name="close" size={22} color="#e5e2e1" />
+        </Pressable>
+        <Text className="text-headline-lg-mobile font-display tracking-tighter text-primary-fixed-dim">
+          G.I.F
+        </Text>
+        <View className="w-10 h-10" />
+      </View>
       
       {/* Progress Bar */}
       <View className="px-container-mobile pt-2 pb-4">

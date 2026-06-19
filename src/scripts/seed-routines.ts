@@ -17,8 +17,7 @@ import {
   query,
 } from "firebase/firestore";
 import { getAllExercises } from "@/features/exercise-library/apis";
-
-const ROUTINES_COLLECTION = "workout_routines";
+import { ROUTINES_COLLECTION } from "@/constants/collections";
 
 /** Tạo mapping muscleGroups → exerciseIds từ exerciseLibrary */
 const pickExercisesForMuscles = (

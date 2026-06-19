@@ -61,9 +61,15 @@ export default function HomeScreen() {
           <TodaysWorkoutCard
             workout={data.todaysWorkout}
             onPress={() => {
-              if (data.todaysWorkout.id) {
+              if (data.todaysWorkout.isCompleted && data.todaysWorkout.completedSessionId) {
                 router.push(
-                  `/(tabs)/workout/active-session?routineId=${data.todaysWorkout.id}`
+                  `/(tabs)/progress/session-details?id=${data.todaysWorkout.completedSessionId}`,
+                );
+              } else if (!data.todaysWorkout.hasAiPlan && !data.todaysWorkout.id) {
+                router.push("/(tabs)/workout");
+              } else if (data.todaysWorkout.id) {
+                router.push(
+                  `/(tabs)/workout/active-session?routineId=${data.todaysWorkout.id}`,
                 );
               }
             }}

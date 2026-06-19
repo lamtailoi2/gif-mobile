@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IExerciseLog } from '../../../interfaces/workout-session.interface';
 import { EIntensity, IWorkoutSession } from '../types/history';
 
@@ -27,7 +28,7 @@ const mapIntensity = (rating: number | undefined): EIntensity => {
 export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession[]> => {
     if (!userId) return [];
     try {
-        const q = query(collection(db, 'workout_sessions'), where('userId', '==', userId), orderBy('completedAt', 'desc'));
+        const q = query(collection(db, WORKOUT_SESSIONS_COLLECTION), where('userId', '==', userId), orderBy('completedAt', 'desc'));
         const snapshot = await getDocs(q);
 
         return snapshot.docs.map((docItem) => {
@@ -56,7 +57,7 @@ export const getLatestSessionFullLogs = async (userId: string): Promise<IExercis
     if (!userId) return [];
     try {
         const q = query(
-            collection(db, 'workout_sessions'),
+            collection(db, WORKOUT_SESSIONS_COLLECTION),
             where('userId', '==', userId),
             orderBy('completedAt', 'desc'),
             limit(1)
@@ -75,7 +76,7 @@ export const getLatestSessionFullLogs = async (userId: string): Promise<IExercis
 export const getSessionById = async (sessionId: string) => {
     if (!sessionId) return null;
     try {
-        const docRef = doc(db, 'workout_sessions', sessionId);
+        const docRef = doc(db, WORKOUT_SESSIONS_COLLECTION, sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             return { id: docSnap.id, ...docSnap.data() };

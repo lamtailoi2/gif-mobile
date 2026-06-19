@@ -1,8 +1,7 @@
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { addDoc, collection } from "firebase/firestore";
-
-const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
+import { WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 
 /**
  * Lưu một buổi tập hoàn chỉnh lên Firestore.

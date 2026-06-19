@@ -8,9 +8,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
-
-const ROUTINES_COLLECTION = "workout_routines";
-const EXERCISE_LIBRARY_COLLECTION = "exercise_library";
+import { ROUTINES_COLLECTION, EXERCISE_LIBRARY_COLLECTION } from "@/constants/collections";
 
 /** Lấy tất cả routines từ Firestore. */
 export const getAllRoutines = async (): Promise<IWorkoutRoutine[]> => {

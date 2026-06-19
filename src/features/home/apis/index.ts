@@ -1,20 +1,8 @@
-import { IWorkoutRoutine } from "@/interfaces/workout-routine.interface";
-import { IWorkoutSession } from "@/interfaces/workout-session.interface";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { buildRecoveryMap } from "./build-recovery-map";
-import { calculateReadiness } from "./calculate-readiness";
-import { calculateStreak } from "./calculate-streak";
+import { getReadiness } from "./get-readiness";
+import { getStreak } from "./get-streak";
+import { getTodaysWorkout } from "./get-todays-workout";
+import { getRecoveryMap } from "./get-recovery-map";
 import { IHomeDashboard } from "../types/dashboard";
-import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
-
-const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
-const ROUTINES_COLLECTION = "workout_routines";
 
 const getTimeOfDay = (): "morning" | "afternoon" | "evening" => {
   const hour = new Date().getHours();
@@ -23,128 +11,23 @@ const getTimeOfDay = (): "morning" | "afternoon" | "evening" => {
   return "evening";
 };
 
-/**
- * Chọn routine cho hôm nay:
- * 1. Tìm routine có dayOfWeek chứa ngày hôm nay
- * 2. Fallback: rotate index theo dayOfWeek % routines.length
- */
-const getTodaysRoutine = (
-  routines: IWorkoutRoutine[]
-): IWorkoutRoutine | null => {
-  if (routines.length === 0) return null;
-  const dayOfWeek = new Date().getDay(); // 0=Sun,...,6=Sat
-  const scheduled = routines.find((r) => r.dayOfWeek?.includes(dayOfWeek));
-  if (scheduled) return scheduled;
-  return routines[dayOfWeek % routines.length];
-};
-
-/**
- * Mapping streak → percentile ước tính.
- * (Tham khảo data từ các app gym phổ biến)
- */
-const streakToPercentile = (streak: number): number => {
-  if (streak >= 30) return 1;
-  if (streak >= 14) return 5;
-  if (streak >= 7) return 15;
-  if (streak >= 3) return 30;
-  return 50;
-};
-
-/**
- * Lấy toàn bộ dashboard data từ Firestore thực tế.
- *
- * @param userId - Clerk user ID để filter sessions
- * @param userName - Tên hiển thị (từ Clerk, không lưu trên Firestore)
- */
 export const getHomeDashboard = async (
   userId: string,
-  userName: string
+  userName: string,
 ): Promise<IHomeDashboard> => {
-  // 1. Fetch recent workout sessions của user
-  let sessions: IWorkoutSession[] = [];
-  try {
-    const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    // Chỉ filter theo userId — tránh composite index requirement.
-    // Sort in-memory sau khi fetch.
-    const q = query(sessionsRef, where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    sessions = snapshot.docs
-      .map((d) => d.data() as IWorkoutSession)
-      .sort((a, b) =>
-        new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-      )
-      .slice(0, 30);
-  } catch (e) {
-    console.error("Error fetching workout sessions for dashboard:", e);
-  }
-
-  // 2. Fetch routines
-  let routines: IWorkoutRoutine[] = [];
-  try {
-    const snapshot = await getDocs(collection(db, ROUTINES_COLLECTION));
-    routines = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as Omit<IWorkoutRoutine, "id">),
-    }));
-  } catch (e) {
-    console.error("Error fetching routines:", e);
-  }
-
-  // 3. Check for AI Plan
-  const aiPlan = await getAiWorkoutPlan(userId);
-
-  // 4. Compute derived values
-  const lastSession = sessions[0];
-  const streak = calculateStreak(sessions);
-  const readiness = calculateReadiness(lastSession);
-  const recoveryMap = buildRecoveryMap(lastSession);
-  
-  let todaysWorkout;
-  
-  if (aiPlan && aiPlan.schedule && aiPlan.schedule.length > 0) {
-    const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon...
-    const adjustedDay = (dayOfWeek + 6) % 7; // Mon=0, Sun=6
-    const dayIndex = adjustedDay % aiPlan.schedule.length;
-    const todayAiSchedule = aiPlan.schedule[dayIndex];
-    
-    todaysWorkout = {
-      id: `ai_plan_day_${dayIndex}_user_${userId}`,
-      type: todayAiSchedule.day || "AI Routine",
-      focus: todayAiSchedule.focus,
-      durationMin: 45,
-      intensity: "Medium",
-      load: "Personalized"
-    };
-  } else {
-    const todaysRoutine = getTodaysRoutine(routines);
-    todaysWorkout = todaysRoutine
-      ? {
-          id: todaysRoutine.id,
-          type: todaysRoutine.name,
-          focus: todaysRoutine.focus,
-          durationMin: todaysRoutine.durationMin,
-          intensity: todaysRoutine.intensity,
-          load: todaysRoutine.load,
-        }
-      : {
-          id: "",
-          type: "Rest Day",
-          focus: "Active Recovery",
-          durationMin: 0,
-          intensity: "Low",
-          load: "None",
-        };
-  }
+  const [readiness, streak, todaysWorkout, recoveryMap] = await Promise.all([
+    getReadiness(userId),
+    getStreak(userId),
+    getTodaysWorkout(userId),
+    getRecoveryMap(userId),
+  ]);
 
   return {
     user: { name: userName },
     greetingTimeOfDay: getTimeOfDay(),
     hasNotification: false,
     readiness,
-    streak: {
-      days: streak,
-      percentile: streakToPercentile(streak),
-    },
+    streak,
     todaysWorkout,
     recoveryMap,
   };

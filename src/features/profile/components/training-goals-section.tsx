@@ -31,7 +31,7 @@ export function TrainingGoalsSection() {
     try {
       await user.update({
         unsafeMetadata: {
-          ...(user.unsafeMetadata as object),
+          ...user.unsafeMetadata,
           goal,
           level,
           daysPerWeek,

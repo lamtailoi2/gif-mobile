@@ -1,10 +1,11 @@
 import { EExperienceLevel, EFitnessGoal } from '@/constants/profile.constant';
+import type { IUserProfile } from '@/interfaces/profile.interface';
 import { getUserProfile } from '@/lib/profile';
 import { create } from 'zustand';
 import { fromIsoDate, type ProfileForm } from '../libs/schema';
 
 type ClerkUserLike =
-  | { firstName?: string | null; lastName?: string | null; unsafeMetadata?: unknown }
+  | { firstName?: string | null; lastName?: string | null; unsafeMetadata?: IUserProfile }
   | null
   | undefined;
 

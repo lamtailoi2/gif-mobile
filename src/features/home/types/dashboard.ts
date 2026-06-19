@@ -31,6 +31,9 @@ export interface ITodaysWorkout {
   durationMin: number;
   intensity: string;
   load: string;
+  isCompleted: boolean;
+  hasAiPlan: boolean;
+  completedSessionId?: string;
 }
 
 export interface IRecoveryMap {

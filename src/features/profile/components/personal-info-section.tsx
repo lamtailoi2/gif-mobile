@@ -50,7 +50,7 @@ export function PersonalInfoSection() {
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         unsafeMetadata: {
-          ...(user.unsafeMetadata as object),
+          ...user.unsafeMetadata,
           gender: data.gender,
           dateOfBirth: toIsoDate(data.birthDay, data.birthMonth, data.birthYear),
           weightKg: Number(data.weightKg),

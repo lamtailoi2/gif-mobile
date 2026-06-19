@@ -5,7 +5,7 @@ import { IUserProfile } from "@/interfaces/profile.interface";
 type ClerkUserLike = {
   firstName?: string | null;
   lastName?: string | null;
-  unsafeMetadata?: unknown;
+  unsafeMetadata?: IUserProfile;
 } | null | undefined;
 
 /** Bước onboarding tiếp theo user cần hoàn tất (null = đã xong hết). */
@@ -13,7 +13,7 @@ export type OnboardingStep = 'profile' | 'goal' | null;
 
 /** Đọc profile từ unsafeMetadata của Clerk user (an toàn với null). */
 export function getUserProfile(user: ClerkUserLike): IUserProfile {
-  return (user?.unsafeMetadata ?? {}) as IUserProfile;
+  return user?.unsafeMetadata ?? {};
 }
 
 /**

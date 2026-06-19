@@ -1,8 +1,7 @@
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { IExerciseGuide } from "@/features/exercise-guide/types/guide";
-
-const GUIDES_COLLECTION = "exercise_guides";
+import { GUIDES_COLLECTION } from "@/constants/collections";
 
 export const getExerciseGuideById = async (
   exerciseId: string,

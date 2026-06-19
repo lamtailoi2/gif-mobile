@@ -14,13 +14,102 @@ export default function TodaysWorkoutCard({
   workout,
   onPress,
 }: ITodaysWorkoutCardProps) {
+  const isCompleted = workout.isCompleted;
+  const isCta = !workout.hasAiPlan && !workout.id;
+
+  if (isCta) {
+    return (
+      <Pressable
+        onPress={onPress}
+        className="active:opacity-90 active:scale-[0.99]"
+      >
+        <GlassPanel className="p-1">
+          <View className="bg-surface/90 rounded-md p-5 border border-electric-blue/20">
+            <View className="flex-row justify-between items-start mb-4">
+              <View className="flex-1">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <View className="flex-row items-center gap-1 px-2 py-0.5 rounded border bg-electric-blue/20 border-electric-blue/30">
+                    <MaterialIcons
+                      name="smart-toy"
+                      size={10}
+                      color={GIFColors.electricBlue}
+                    />
+                    <Text className="text-[10px] font-mono text-electric-blue uppercase tracking-widest">
+                      AI COACH
+                    </Text>
+                  </View>
+                  <Text className="text-label-caps font-mono text-on-surface-variant uppercase">
+                    Set up your AI Coach
+                  </Text>
+                </View>
+                <Text className="text-headline-md font-display text-primary">
+                  Personalized AI Plan
+                </Text>
+                <Text className="text-body-md font-body text-on-surface-variant">
+                  Let AI build your perfect routine
+                </Text>
+              </View>
+
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: GIFColors.electricBlue,
+                  shadowColor: GIFColors.electricBlue,
+                  shadowOpacity: 0.5,
+                  shadowRadius: 15,
+                  shadowOffset: { width: 0, height: 0 },
+                  elevation: 8,
+                }}
+              >
+                <MaterialIcons
+                  name="add-circle"
+                  size={28}
+                  color={GIFColors.onSecondary}
+                />
+              </View>
+            </View>
+
+            <View className="flex-row gap-gutter mt-stack-md border-t border-white/10 pt-4">
+              <View className="flex-1 items-center">
+                <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
+                  GOAL BASED
+                </Text>
+                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                  AI Powered
+                </Text>
+              </View>
+              <View className="flex-1 items-center">
+                <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
+                  ADAPTIVE
+                </Text>
+                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                  Smart Progress
+                </Text>
+              </View>
+              <View className="flex-1 items-center">
+                <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
+                  CUSTOM
+                </Text>
+                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                  Your Metrics
+                </Text>
+              </View>
+            </View>
+          </View>
+        </GlassPanel>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       onPress={onPress}
       className="active:opacity-90 active:scale-[0.99]"
     >
       <GlassPanel className="p-1">
-        <View className="bg-surface/90 rounded-md p-5 border border-white/5">
+        <View
+          className={`bg-surface/90 rounded-md p-5 border ${isCompleted ? "border-primary-fixed-dim/30" : "border-white/5"}`}
+        >
           <View className="flex-row justify-between items-start mb-4">
             <View className="flex-1">
               <View className="flex-row items-center gap-2 mb-2">
@@ -31,7 +120,7 @@ export default function TodaysWorkoutCard({
                     color={GIFColors.primaryFixedDim}
                   />
                   <Text className="text-[10px] font-mono text-primary-fixed-dim uppercase tracking-widest">
-                    AI REC
+                    {isCompleted ? "DONE" : "AI REC"}
                   </Text>
                 </View>
                 <Text className="text-label-caps font-mono text-on-surface-variant uppercase">
@@ -47,17 +136,18 @@ export default function TodaysWorkoutCard({
             </View>
 
             <View
-              className="w-12 h-12 rounded-full bg-primary-fixed-dim items-center justify-center"
+              className="w-12 h-12 rounded-full items-center justify-center"
               style={{
+                backgroundColor: GIFColors.primaryFixedDim,
                 shadowColor: GIFColors.primaryFixedDim,
-                shadowOpacity: 0.4,
+                shadowOpacity: isCompleted ? 0.5 : 0.4,
                 shadowRadius: 15,
                 shadowOffset: { width: 0, height: 0 },
                 elevation: 8,
               }}
             >
               <MaterialIcons
-                name="play-arrow"
+                name={isCompleted ? "history" : "play-arrow"}
                 size={28}
                 color={GIFColors.onPrimaryFixed}
               />

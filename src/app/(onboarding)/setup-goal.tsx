@@ -35,7 +35,7 @@ export default function SetupGoalScreen() {
     try {
       await user.update({
         unsafeMetadata: {
-          ...(user.unsafeMetadata as object),
+          ...user.unsafeMetadata,
           goal,
           level,
           daysPerWeek,

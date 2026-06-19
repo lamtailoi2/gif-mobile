@@ -1,12 +1,11 @@
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { IExercise } from "../types/exercise";
-
-const EXCERCISE_LIBRARY_COLLECTION = "exercise_library";
+import { EXERCISE_LIBRARY_COLLECTION } from "@/constants/collections";
 
 export const getAllExercises = async (): Promise<IExercise[]> => {
   try {
-    const exercisesRef = collection(db, EXCERCISE_LIBRARY_COLLECTION);
+    const exercisesRef = collection(db, EXERCISE_LIBRARY_COLLECTION);
 
     const snapshot = await getDocs(exercisesRef);
     return snapshot.docs.map((doc) => ({
@@ -23,7 +22,7 @@ export const getExerciseByCategory = async (
   category: string,
 ): Promise<IExercise[]> => {
   try {
-    const exercisesRef = collection(db, EXCERCISE_LIBRARY_COLLECTION);
+    const exercisesRef = collection(db, EXERCISE_LIBRARY_COLLECTION);
     const q = query(exercisesRef, where("category", "==", category));
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => ({
