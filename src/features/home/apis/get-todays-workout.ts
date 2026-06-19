@@ -4,9 +4,8 @@ import { IWorkoutRoutine } from "@/interfaces/workout-routine.interface";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
 import { ITodaysWorkout } from "../types/dashboard";
-import { ROUTINES_COLLECTION } from "@/constants/collections";
-
-const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
+import { ROUTINES_COLLECTION, WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
+import { getLocalDateString } from "@/utils/date";
 
 const getTodaysRoutine = (
   routines: IWorkoutRoutine[],
@@ -22,12 +21,12 @@ const getCompletedTodaySessionId = async (
   userId: string,
 ): Promise<string | undefined> => {
   try {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalDateString(new Date());
     const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
     const q = query(sessionsRef, where("userId", "==", userId));
     const snapshot = await getDocs(q);
     const todaySession = snapshot.docs.find(
-      (d) => (d.data() as IWorkoutSession).completedAt.slice(0, 10) === todayStr,
+      (d) => getLocalDateString((d.data() as IWorkoutSession).completedAt) === todayStr,
     );
     return todaySession?.id;
   } catch (e) {

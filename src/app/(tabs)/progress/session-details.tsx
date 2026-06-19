@@ -85,7 +85,7 @@ export default function SessionDetailsScreen() {
               <Text className="font-display text-[22px] font-bold text-neon-green">
                 {totalVolume.toLocaleString()}
               </Text>
-              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">VOL (lbs)</Text>
+              <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">VOL (kg)</Text>
             </View>
             <View className="w-px bg-surface-variant/20" />
             <View className="items-center gap-1">
@@ -135,7 +135,7 @@ export default function SessionDetailsScreen() {
                 {/* Sets Header */}
                 <View className="flex-row items-center px-4 py-2 border-b border-surface-variant/10">
                   <Text className="font-mono text-[10px] text-on-surface-variant/50 w-8 text-center">SET</Text>
-                  <Text className="font-mono text-[10px] text-on-surface-variant/50 flex-1 ml-2 text-center">WEIGHT (LBS)</Text>
+                  <Text className="font-mono text-[10px] text-on-surface-variant/50 flex-1 ml-2 text-center">WEIGHT (KG)</Text>
                   <Text className="font-mono text-[10px] text-on-surface-variant/50 flex-1 ml-2 text-center">REPS</Text>
                 </View>
 

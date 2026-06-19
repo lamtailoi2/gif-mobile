@@ -7,8 +7,8 @@ import { IExercise } from "@/features/exercise-library/types/exercise";
 export const isTimeBasedExercise = (exercise: IExercise | undefined): boolean => {
   if (!exercise) return false;
 
-  const timeBasedCategories = ["cardio", "stretching", "yoga", "plyometrics"];
-  const timeBasedKeywords = ["plank", "hold", "sit", "run", "jump rope", "mountain climber"];
+  const timeBasedCategories = ["cardio", "stretching", "yoga", "plyometrics", "mobility"];
+  const timeBasedKeywords = ["plank", "hold", "sit", "run", "jump", "mountain climber", "stretch", "burpee", "high knee", "sprint", "jog", "walk", "mobility"];
 
   const categoryMatch = exercise.category ? timeBasedCategories.includes(exercise.category.toLowerCase()) : false;
   

@@ -198,7 +198,7 @@ export default function SessionComplete() {
                 {totalVolume.toLocaleString()}
               </Text>
               <Text className="font-mono text-[10px] text-on-surface-variant/50 tracking-[0.08em]">
-                TOTAL VOL (lbs)
+                TOTAL VOL (kg)
               </Text>
             </View>
             {/* Divider */}

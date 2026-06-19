@@ -283,9 +283,9 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
         {/* Hybrid Tracker (Weight/Reps) vs Timer */}
         {currentSet && (
           isTimeBased ? (
-            <View className="items-center justify-center mb-12 gap-6 mt-4">
-              <View className={`items-center px-10 py-12 rounded-full border-[3px] ${isExerciseTimerRunning ? 'bg-[#abd600]/10 border-[#abd600]' : 'bg-surface-container/30 border-surface-variant/30'}`}>
-                <Text className="font-mono text-[80px] font-bold text-on-surface">
+            <View className="items-center justify-center mb-8 gap-4 mt-2">
+              <View className={`items-center px-8 py-8 rounded-full border-[3px] ${isExerciseTimerRunning ? 'bg-[#abd600]/10 border-[#abd600]' : 'bg-surface-container/30 border-surface-variant/30'}`}>
+                <Text className="font-mono text-[64px] font-bold text-on-surface">
                   {formatTime(exerciseTimeLeft)}
                 </Text>
               </View>
@@ -305,7 +305,7 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
           ) : (
             <View className="flex-row items-center justify-center gap-6 mb-12">
               <View className="items-center">
-                <Text className="font-mono text-label-caps text-on-surface-variant mb-2 tracking-widest">LBS</Text>
+                <Text className="font-mono text-label-caps text-on-surface-variant mb-2 tracking-widest">KG</Text>
                 <View className="bg-surface-container rounded-2xl w-24 h-16 items-center justify-center border border-surface-variant/20">
                   <TextInput
                     keyboardType="numeric"
