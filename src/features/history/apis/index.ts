@@ -3,6 +3,7 @@ import { db } from '../../../lib/firebase';
 import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IExerciseLog } from '../../../interfaces/workout-session.interface';
 import { EIntensity, IWorkoutSession } from '../types/history';
+import { getLocalDateString } from '@/utils/date';
 
 const determineWorkoutType = (muscleGroups: string[]): string => {
     const muscleSet = new Set(muscleGroups.map(m => m.toLowerCase()));
@@ -40,7 +41,7 @@ export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession
 
             return {
                 id: docItem.id,
-                date: data.completedAt.split('T')[0],
+                date: getLocalDateString(new Date(data.completedAt)),
                 time: formatTime(data.completedAt),
                 intensity: mapIntensity(data.intensityRating),
                 type: determineWorkoutType(muscleGroups),

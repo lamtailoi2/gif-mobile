@@ -74,7 +74,7 @@ export default function TodaysWorkoutCard({
                 <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
                   GOAL BASED
                 </Text>
-                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                <Text className="text-xs font-display font-bold text-electric-blue">
                   AI Powered
                 </Text>
               </View>
@@ -82,7 +82,7 @@ export default function TodaysWorkoutCard({
                 <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
                   ADAPTIVE
                 </Text>
-                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                <Text className="text-xs font-display font-bold text-electric-blue">
                   Smart Progress
                 </Text>
               </View>
@@ -90,7 +90,7 @@ export default function TodaysWorkoutCard({
                 <Text className="text-[10px] font-mono text-on-surface-variant mb-1 uppercase">
                   CUSTOM
                 </Text>
-                <Text className="text-body-lg font-display font-bold text-electric-blue">
+                <Text className="text-xs font-display font-bold text-electric-blue">
                   Your Metrics
                 </Text>
               </View>

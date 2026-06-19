@@ -20,13 +20,41 @@ export async function generateWorkoutPlan(
 
   const exercises = await getAllExercises();
   console.log("Exercises loaded:", exercises?.length);
-  const exerciseList = exercises.map((e) => ({
+
+  // Lọc bài tập thông minh dựa theo mục tiêu & trình độ của user
+  // để giảm kích thước prompt, tránh lỗi TPM rate limit của Groq (limit 6000 tokens).
+  const GOAL_CATEGORY_MAP: Record<string, string[]> = {
+    build_muscle:       ["strength", "powerlifting"],
+    lose_weight:        ["cardio", "hiit", "strength", "plyometrics"],
+    improve_endurance:  ["cardio", "hiit", "plyometrics", "mobility"],
+    maintain_health:    ["strength", "cardio", "mobility", "stretching"],
+  };
+  const userGoal = profile.goal ?? "maintain_health";
+  const preferredCategories = GOAL_CATEGORY_MAP[userGoal] ?? [];
+
+  // Ưu tiên các bài khớp category với goal; bổ sung thêm các bài khác nếu chưa đủ
+  const preferred = exercises.filter((e) =>
+    preferredCategories.includes((e.category ?? "").toLowerCase())
+  );
+  const others = exercises.filter(
+    (e) => !preferredCategories.includes((e.category ?? "").toLowerCase())
+  );
+
+  // Lấy tối đa 40 bài (đủ đa dạng, an toàn với token limit)
+  const MAX_EXERCISES = 40;
+  const selectedExercises = [
+    ...preferred.slice(0, Math.min(preferred.length, 30)),
+    ...others.slice(0, Math.max(0, MAX_EXERCISES - Math.min(preferred.length, 30))),
+  ].slice(0, MAX_EXERCISES);
+
+  console.log(`Sending ${selectedExercises.length} exercises to AI (filtered from ${exercises.length})`);
+
+  // Chỉ gửi các field tối thiểu cần thiết để AI lên lịch tập
+  const exerciseList = selectedExercises.map((e) => ({
     id: e.id,
     n: e.name,
     c: e.category,
-    d: e.difficulty,
-    m: e.muscleGroups,
-    eq: e.equipment,
+    m: Array.isArray(e.muscleGroups) ? e.muscleGroups.join(",") : e.muscleGroups,
     s: e.defaultSets,
     r: e.defaultReps,
   }));
@@ -35,17 +63,15 @@ export async function generateWorkoutPlan(
     goal: profile.goal,
     level: profile.level,
     gender: profile.gender,
-    heightCm: profile.heightCm,
-    weightKg: profile.weightKg,
     daysPerWeek: profile.daysPerWeek,
   };
 
-  const prompt = `Fitness Coach. Create JSON workout plan for user:
-${JSON.stringify(p)}
-Exercises (id,n=name,c=category,d=difficulty,m=muscles,eq=equipment,s=sets,r=reps):
+  const prompt = `Fitness coach. Create a JSON workout plan.
+User: ${JSON.stringify(p)}
+Exercises(id,n=name,c=category,m=muscles,s=sets,r=reps):
 ${JSON.stringify(exerciseList)}
-IMPORTANT: For time-based exercises (cardio, stretching, mobility, plyometrics, "jump", "bound", "plank", "hold"), the 'reps' field represents SECONDS. Set it to 30, 45, or 60. Do NOT use small numbers like 6 or 8 for time-based exercises.
-Use only exercises from the list. Return ONLY JSON, no explanation:
+Rules: Use only IDs from list. For cardio/plyometrics/stretching exercises, r=seconds(30,45,60). For strength, r=reps count.
+Return ONLY JSON:
 {"userAssessment":"...","schedule":[{"day":"Day 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
 
   const response = await fetch(GROQ_API_URL, {
@@ -55,10 +81,19 @@ Use only exercises from the list. Return ONLY JSON, no explanation:
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      max_tokens: 2000,
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
+      // llama-3.3-70b-versatile: tuân thủ instruction tốt hơn 8b, ít bị hallucinate
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 1500,
+      temperature: 0.1,
+      // Ép buộc Groq chỉ trả về JSON object thuần, không trả code hay text khác
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You are a fitness API. You ONLY output valid JSON. Never write code, never write explanations, never use markdown. Output ONLY a raw JSON object."
+        },
+        { role: "user", content: prompt }
+      ],
     }),
   });
 
@@ -73,7 +108,10 @@ Use only exercises from the list. Return ONLY JSON, no explanation:
   if (!generatedText) throw new Error("Groq API returned empty response.");
 
   try {
-    const match = generatedText.match(/\{[\s\S]*\}/);
+    // response_format: json_object đảm bảo Groq trả về JSON thuần
+    // Vẫn giữ fallback regex phòng khi API trả kèm markdown wrapping
+    const text = generatedText.trim();
+    const match = text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("No JSON object found in response.");
     return JSON.parse(match[0]) as IWorkoutPlanResponse;
   } catch (error) {
