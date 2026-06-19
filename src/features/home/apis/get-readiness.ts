@@ -1,4 +1,4 @@
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { IReadiness } from "../types/dashboard";
@@ -9,14 +9,14 @@ export const getReadiness = async (userId: string): Promise<IReadiness> => {
 
   try {
     const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    const q = query(sessionsRef, where("userId", "==", userId));
+    const q = query(
+      sessionsRef,
+      where("userId", "==", userId),
+      orderBy("completedAt", "desc"),
+      limit(1)
+    );
     const snapshot = await getDocs(q);
-    const sessions = snapshot.docs
-      .map((d) => d.data() as IWorkoutSession)
-      .sort(
-        (a, b) =>
-          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
-      );
+    const sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
 
     lastSession = sessions[0];
   } catch (e) {

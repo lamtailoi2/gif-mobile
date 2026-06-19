@@ -5,7 +5,7 @@ export type EnergyLevel = "drained" | "steady" | "charged";
 export interface ISetLog {
   /** 0-indexed */
   setIndex: number;
-  /** Cân nặng (lbs) */
+  /** Cân nặng (kg) */
   weight: number;
   /** Số reps thực hiện */
   reps: number;

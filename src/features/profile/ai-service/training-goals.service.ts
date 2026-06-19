@@ -2,6 +2,7 @@ import { getAllExercises } from "@/features/exercise-library/apis";
 import { IWorkoutPlanResponse } from "./types";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { USER_AI_PLANS_COLLECTION } from "@/constants/collections";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -43,6 +44,7 @@ export async function generateWorkoutPlan(
 ${JSON.stringify(p)}
 Exercises (id,n=name,c=category,d=difficulty,m=muscles,eq=equipment,s=sets,r=reps):
 ${JSON.stringify(exerciseList)}
+IMPORTANT: For time-based exercises (cardio, stretching, mobility, plyometrics, "jump", "bound", "plank", "hold"), the 'reps' field represents SECONDS. Set it to 30, 45, or 60. Do NOT use small numbers like 6 or 8 for time-based exercises.
 Use only exercises from the list. Return ONLY JSON, no explanation:
 {"userAssessment":"...","schedule":[{"day":"Day 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
 
@@ -82,7 +84,7 @@ Use only exercises from the list. Return ONLY JSON, no explanation:
 
 export async function saveAiWorkoutPlan(userId: string, plan: IWorkoutPlanResponse): Promise<void> {
   try {
-    const docRef = doc(db, "user_ai_plans", userId);
+    const docRef = doc(db, USER_AI_PLANS_COLLECTION, userId);
     await setDoc(docRef, { ...plan, updatedAt: new Date().toISOString() }, { merge: true });
   } catch (error) {
     console.error("Failed to save AI plan to Firestore:", error);
@@ -91,7 +93,7 @@ export async function saveAiWorkoutPlan(userId: string, plan: IWorkoutPlanRespon
 
 export async function getAiWorkoutPlan(userId: string): Promise<IWorkoutPlanResponse | null> {
   try {
-    const docRef = doc(db, "user_ai_plans", userId);
+    const docRef = doc(db, USER_AI_PLANS_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return docSnap.data() as IWorkoutPlanResponse;
