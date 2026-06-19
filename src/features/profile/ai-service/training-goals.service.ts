@@ -44,6 +44,7 @@ export async function generateWorkoutPlan(
 ${JSON.stringify(p)}
 Exercises (id,n=name,c=category,d=difficulty,m=muscles,eq=equipment,s=sets,r=reps):
 ${JSON.stringify(exerciseList)}
+IMPORTANT: For time-based exercises (cardio, stretching, mobility, plyometrics, "jump", "bound", "plank", "hold"), the 'reps' field represents SECONDS. Set it to 30, 45, or 60. Do NOT use small numbers like 6 or 8 for time-based exercises.
 Use only exercises from the list. Return ONLY JSON, no explanation:
 {"userAssessment":"...","schedule":[{"day":"Day 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
 
