@@ -1,56 +1,43 @@
-# Welcome to your Expo app 👋
+# G.I.F - Hyper-Performance AI Fitness App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+G.I.F is a modern, AI-powered fitness mobile application built with React Native and Expo. It features a futuristic glassmorphic design and acts as an intelligent command center for users' bodies, offering personalized workout plans, biometric tracking, and daily readiness scores.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+- **Framework:** Expo SDK 56 / React Native 0.85
+- **Routing:** Expo Router (File-based routing)
+- **Styling:** Tailwind CSS (NativeWind)
+- **State Management:** Zustand
+- **Authentication:** Clerk
+- **Database:** Firebase Firestore
+- **AI Engine:** Groq (Llama-3.1)
 
+## Architecture Highlights
+
+- **AI Workout Generation:** Uses Groq's blazing-fast API to generate personalized JSON workout routines based on the user's fitness goals, weight, and experience level.
+- **Centralized Collections:** All Firebase Firestore collection names are strictly managed via `src/constants/collections.ts`.
+- **Timezone-Safe Logic:** Uses a custom `getLocalDateString()` utility to handle daily streaks and readiness calculations safely across different time zones.
+- **Optimized Queries:** Dashboard APIs are optimized with `limit()` and `orderBy()` to minimize Firestore reads and maximize performance.
+
+## Getting Started
+
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Environment Variables:**
+   Copy `.env.example` to `.env` and fill in your keys:
+   - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `EXPO_PUBLIC_FIREBASE_*` credentials
+   - `EXPO_PUBLIC_GROQ_API_KEY`
 
+3. **Start the development server:**
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+## Key Documentation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **[AGENTS.md](./AGENTS.md):** Strict coding guidelines, naming conventions, and architecture rules for developers and AI agents.
+- **[DESIGN.md](./DESIGN.md):** The comprehensive Design System, covering the Futuristic Glassmorphism aesthetic, typography, and color tokens.

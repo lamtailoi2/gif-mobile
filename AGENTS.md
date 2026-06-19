@@ -41,6 +41,11 @@ No test framework is configured.
 - **Functions**: `camelCase` and must start with a verb describing the action (e.g. `getAllExercises`, `parseArray`, `handleExercisePress`, `useExerciseFilter` — `use` itself is the verb for hooks). Avoid noun-only names like `exerciseData()`.
 - **Expo Router routes**: follow file-based routing conventions — `[id].tsx`, `_layout.tsx`, `(group)/` — kebab-case for static segments.
 
+## Best Practices & Standard Utilities
+- **Firestore Collections**: NEVER hardcode collection names (e.g., `collection(db, "users")`). Always import and use the constants from `src/constants/collections.ts` (e.g., `ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`).
+- **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` to get the current date string, as it returns UTC time and breaks streaks/daily trackers. Always use the `getLocalDateString()` utility from `src/utils/date.ts`.
+- **Unit of Measurement**: The application is configured for the Vietnamese audience. Always use `kg` (kilograms) instead of `lbs` for weights.
+
 ## Development Workflow & Rules
 
 - **Design First**: Always read and analyze the provided design files carefully before implementing any UI.
@@ -71,8 +76,9 @@ Platform-specific component files follow `.web.tsx` suffix convention.
 - Signed-out users see `src/app/sign-in.tsx`; signed-in users see `<AppTabs>`.
 - Token cache uses `expo-secure-store` (graceful no-op on web).
 
-- **Firestore**: Initialized in `src/lib/firebase.ts` — exports `db` via `getFirestore()`. JS SDK (works in Expo Go).
+- **Firestore**: Initialized in `src/lib/firebase.ts` — exports `db` via `getFirestore()`. JS SDK (works in Expo Go). All data fetching should be optimized with `orderBy()` and `limit()` where possible to minimize reads.
 - **Credentials**: Set `EXPO_PUBLIC_*` vars in `.env` (copy `.env.example`). Expo SDK 56 inlines `EXPO_PUBLIC_*` vars at bundle time — no manual config loading needed.
+- **AI Integration**: The app uses the Groq API (Llama 3.1) in `src/features/profile/ai-service/` for generating personalized workout plans. Requires `EXPO_PUBLIC_GROQ_API_KEY`.
 
 ---
 
