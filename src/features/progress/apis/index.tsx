@@ -3,6 +3,7 @@ import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IProgressDashboardData } from '../types/progress';
+import { getLocalDateString } from '@/utils/date';
 
 /**
  * Calculate 7-day recovery data (most recent 7 days).
@@ -15,8 +16,7 @@ const calculateRecoveryData = (sessions: any[]): any[] => {
     // Map of day (YYYY-MM-DD) to recovery data
     const sessionByDay = new Map<string, any>();
     sessions.forEach((session) => {
-        const date = new Date(session.completedAt);
-        const dayStr = date.toISOString().split('T')[0];
+        const dayStr = getLocalDateString(new Date(session.completedAt));
         if (!sessionByDay.has(dayStr)) {
             sessionByDay.set(dayStr, session);
         }
@@ -27,7 +27,7 @@ const calculateRecoveryData = (sessions: any[]): any[] => {
     for (let i = 0; i < 7; i++) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        const dayStr = date.toISOString().split('T')[0];
+        const dayStr = getLocalDateString(date);
         const dayOfWeek = date.getDay();
         const session = sessionByDay.get(dayStr);
 
@@ -72,7 +72,7 @@ export const getProgressDashboard = async (userId: string): Promise<IProgressDas
         }
 
         // 1. LẤY DANH SÁCH CÁC NGÀY ĐÃ TẬP (YYYY-MM-DD)
-        const workoutDates = [...new Set(sessions.map(s => s.completedAt.split('T')[0]))];
+        const workoutDates = [...new Set(sessions.map(s => getLocalDateString(new Date(s.completedAt))))];
 
         // 2. TÍNH TOÁN RECOVERY TRÊN 7 NGÀY GẦN NHẤT
         const recoveryData = calculateRecoveryData(sessions);

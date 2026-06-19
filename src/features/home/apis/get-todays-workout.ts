@@ -59,9 +59,15 @@ export const getTodaysWorkout = async (
 
   const base = (() => {
     if (hasAiPlan) {
-      const dayOfWeek = new Date().getDay();
-      const adjustedDay = (dayOfWeek + 6) % 7;
-      const dayIndex = adjustedDay % aiPlan.schedule.length;
+      let currentIndex = aiPlan.currentPlanIndex || 0;
+      
+      // Nếu hôm nay đã tập xong, ta lùi index lại 1 bước để hiển thị đúng bài vừa tập.
+      // Vì lúc save session, index đã được tăng lên để dành cho ngày mai.
+      if (completedSessionId) {
+        currentIndex = (currentIndex - 1 + aiPlan.schedule.length) % aiPlan.schedule.length;
+      }
+      
+      const dayIndex = currentIndex % aiPlan.schedule.length;
       const todayAiSchedule = aiPlan.schedule[dayIndex];
 
       return {

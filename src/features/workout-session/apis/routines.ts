@@ -62,6 +62,16 @@ export const getRoutineWithExercises = async (
       )
     );
 
+    // Lỗi 1 fix: Log cảnh báo cho các exerciseId không tìm thấy trong Firestore
+    // thay vì silently bỏ qua — giúp dễ debug khi AI sinh ra ID sai.
+    exerciseDocs.forEach((d, idx) => {
+      if (!d.exists()) {
+        console.warn(
+          `[AI Plan] Exercise ID "${routine.exerciseIds[idx]}" not found in exercise_library. It will be skipped.`
+        );
+      }
+    });
+
     const exercises: IExercise[] = exerciseDocs
       .filter((d) => d.exists())
       .map((d) => {
@@ -74,6 +84,12 @@ export const getRoutineWithExercises = async (
           defaultReps: aiEx?.reps || data.defaultReps
         };
       });
+
+    if (exercises.length === 0) {
+      throw new Error(
+        `[AI Plan] Day ${dayIndex}: No valid exercises found. All ${routine.exerciseIds.length} exercise IDs returned by AI are invalid. Please regenerate the AI plan.`
+      );
+    }
 
     return { routine, exercises };
   }
@@ -93,6 +109,15 @@ export const getRoutineWithExercises = async (
       getDoc(doc(db, EXERCISE_LIBRARY_COLLECTION, id))
     )
   );
+
+  // Log cảnh báo cho các exerciseId không tìm thấy trong Firestore
+  exerciseDocs.forEach((d, idx) => {
+    if (!d.exists()) {
+      console.warn(
+        `[Routine "${routine.name}"] Exercise ID "${routine.exerciseIds[idx]}" not found in exercise_library. It will be skipped.`
+      );
+    }
+  });
 
   const exercises: IExercise[] = exerciseDocs
     .filter((d) => d.exists())

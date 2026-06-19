@@ -14,6 +14,7 @@ export interface IDaySchedule {
 export interface IWorkoutPlanResponse {
   userAssessment: string; // AI assessment in Vietnamese
   schedule: IDaySchedule[];
+  currentPlanIndex?: number;
 }
 
 // types/exercise.ts

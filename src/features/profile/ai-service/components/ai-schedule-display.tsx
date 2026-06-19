@@ -22,7 +22,9 @@ export default function AiScheduleDisplay({
   loading = false,
 }: IAiScheduleDisplayProps) {
   const theme = useTheme();
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
+    return (plan.currentPlanIndex || 0) % (plan.schedule.length || 1);
+  });
   const [showAssessment, setShowAssessment] = useState(true);
 
   if (!plan.schedule || plan.schedule.length === 0) {
