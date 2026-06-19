@@ -51,12 +51,12 @@ No test framework is configured.
 | **Auth** | `src/features/auth/` | Sign-in/sign-up forms with Zod validation, Clerk SSO (Google OAuth). Uses `react-hook-form`. |
 | **Onboarding** | `src/features/onboarding/` | 2-step wizard (profile → goals). Zustand draft store preserves state across steps. Saves to Clerk `unsafeMetadata`. |
 | **Home** | `src/features/home/` | Dashboard aggregating: AI greeting (time-of-day), readiness score (from last session recency + intensity), streak (consecutive days from last 30 sessions), today's workout card (AI plan or pre-set routine), muscle recovery map. |
-| **Exercise Library** | `src/features/exercise-library/` | Exercise catalog with search, muscle group pills, advanced filter (body parts, category, difficulty). Zustand filter store. 1hr React Query stale time. |
+| **Exercise Library** | `src/features/exercise-library/` | Exercise catalog with search, muscle group pills, advanced filter (body parts, category, difficulty). APIs: `getAllExercises`, `getExerciseByCategory`, `getExercisesByCategories` (Firestore `in` filter). Zustand filter store. 1hr React Query stale time. |
 | **Exercise Guide** | `src/features/exercise-guide/` | Exercise detail with YouTube embed (`react-native-youtube-iframe`), execution steps, common mistakes, alternatives, muscle visualization (`react-native-body-highlighter`). 30min stale time. |
 | **Workout Session** | `src/features/workout-session/` | Active session state machine (PREPARING → ACTIVE → RESTING → COMPLETED). Set tracking, rest timer, TTS voice guidance, haptics, keep-awake. Pre-fills weights from previous session. Saves to Firestore. |
 | **History** | `src/features/history/` | Paginated workout history with time view (Week/Month/All), date picker, search, type filter (PUSH/PULL/LEGS). Zustand filter store. Session details view. |
 | **Progress** | `src/features/progress/` | Analytics: 18-week consistency grid, volume-over-time chart, 7-day recovery/intensity chart, AI text insight, health metrics (HRV, sleep score). |
-| **Profile / AI** | `src/features/profile/` | Profile header, editable personal info & goals (reuses onboarding components). AI service uses Groq API (llama-3.3-70b-versatile) to generate personalized weekly workout plans, saved to `user_ai_plans` Firestore collection + SecureStore cache. |
+| **Profile / AI** | `src/features/profile/` | Profile header, editable personal info & goals (reuses onboarding components). AI service uses Groq API (llama-3.3-70b-versatile) to generate personalized weekly workout plans, saved to `user_ai_plans` Firestore collection + SecureStore cache. Filters exercises by goal category via `getExercisesByCategories` before sending to Groq to reduce token usage. |
 
 ## UI Components
 
@@ -122,6 +122,7 @@ No test framework is configured.
 | `src/features/history/types/history.ts` | `EIntensity` (HighIntensity \| Intense \| Normal) |
 | `src/features/progress/types/progress.ts` | `IProgressDashboardData`, `IRecoveryItem`, `IHealthMetrics`, `IAiInsight` |
 | `src/features/profile/ai-service/types.ts` | `IGeneratedExercise`, `IDaySchedule`, `IWorkoutPlanResponse` |
+| `src/constants/goal-category-map.ts` | `GOAL_CATEGORY_MAP` (maps `EFitnessGoal` → exercise categories for AI prompt filtering) |
 
 ## Core Libraries
 

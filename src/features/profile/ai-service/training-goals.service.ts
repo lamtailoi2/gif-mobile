@@ -1,4 +1,5 @@
-import { getAllExercises } from "@/features/exercise-library/apis";
+import { getExercisesByCategories } from "@/features/exercise-library/apis";
+import { GOAL_CATEGORY_MAP } from "@/constants/goal-category-map";
 import { IWorkoutPlanResponse } from "./types";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -18,36 +19,22 @@ export async function generateWorkoutPlan(
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("GROQ_API_KEY is not set.");
 
-  const exercises = await getAllExercises();
-  console.log("Exercises loaded:", exercises?.length);
-
-  // Lọc bài tập thông minh dựa theo mục tiêu & trình độ của user
-  // để giảm kích thước prompt, tránh lỗi TPM rate limit của Groq (limit 6000 tokens).
-  const GOAL_CATEGORY_MAP: Record<string, string[]> = {
-    build_muscle:       ["strength", "powerlifting"],
-    lose_weight:        ["cardio", "hiit", "strength", "plyometrics"],
-    improve_endurance:  ["cardio", "hiit", "plyometrics", "mobility"],
-    maintain_health:    ["strength", "cardio", "mobility", "stretching"],
-  };
   const userGoal = profile.goal ?? "maintain_health";
   const preferredCategories = GOAL_CATEGORY_MAP[userGoal] ?? [];
 
-  // Ưu tiên các bài khớp category với goal; bổ sung thêm các bài khác nếu chưa đủ
-  const preferred = exercises.filter((e) =>
-    preferredCategories.includes((e.category ?? "").toLowerCase())
-  );
-  const others = exercises.filter(
-    (e) => !preferredCategories.includes((e.category ?? "").toLowerCase())
-  );
+  // Fetch exercises matching goal categories directly from Firestore (max 30 preferred + 10 filler)
+  const preferred = await getExercisesByCategories(preferredCategories, 30);
+  const otherCategories = Object.values(GOAL_CATEGORY_MAP)
+    .flat()
+    .filter((c) => !preferredCategories.includes(c))
+    .filter((c, i, arr) => arr.indexOf(c) === i);
+  const filler = preferred.length < 30 && otherCategories.length > 0
+    ? await getExercisesByCategories(otherCategories, 40 - preferred.length)
+    : [];
 
-  // Lấy tối đa 40 bài (đủ đa dạng, an toàn với token limit)
-  const MAX_EXERCISES = 40;
-  const selectedExercises = [
-    ...preferred.slice(0, Math.min(preferred.length, 30)),
-    ...others.slice(0, Math.max(0, MAX_EXERCISES - Math.min(preferred.length, 30))),
-  ].slice(0, MAX_EXERCISES);
+  const selectedExercises = [...preferred, ...filler].slice(0, 40);
 
-  console.log(`Sending ${selectedExercises.length} exercises to AI (filtered from ${exercises.length})`);
+  console.log(`Sending ${selectedExercises.length} exercises to AI (${preferred.length} preferred + ${filler.length} filler)`);
 
   // Chỉ gửi các field tối thiểu cần thiết để AI lên lịch tập
   const exerciseList = selectedExercises.map((e) => ({

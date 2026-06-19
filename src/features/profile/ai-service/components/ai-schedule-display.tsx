@@ -4,6 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { IWorkoutPlanResponse } from "../types";
 import { IExercise } from "@/features/exercise-library/types/exercise";
+import slugify from "slugify";
 import AiExerciseCard from "./ai-exercise-card";
 
 interface IAiScheduleDisplayProps {
@@ -129,9 +130,10 @@ export default function AiScheduleDisplay({
           const exerciseToRender: IExercise = fullExercise ?? {
             id: item.exerciseId,
             name: item.exerciseName,
+            slug: slugify(item.exerciseName),
             category: "strength",
             difficulty: "Beginner",
-            equipment: "None",
+            equipment: ["None"],
             muscleGroups: [],
             defaultSets: item.sets,
             defaultReps: item.reps,
