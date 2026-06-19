@@ -66,7 +66,9 @@ export default function AiScheduleDisplay({
           {showAssessment && (
             <View className="p-4 bg-surface-container/20">
               <Text className="font-body text-sm leading-6 text-on-surface-variant">
-                {plan.userAssessment}
+                {typeof plan.userAssessment === 'string' 
+                  ? plan.userAssessment 
+                  : "Here is your personalized workout plan."}
               </Text>
             </View>
           )}
