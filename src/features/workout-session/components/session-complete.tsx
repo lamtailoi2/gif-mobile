@@ -1,6 +1,9 @@
 import { useTheme } from "@/hooks/use-theme";
 import { useSaveWorkoutSession } from "@/features/workout-session/hooks/use-save-workout-session";
 import { useWorkoutSessionStore } from "@/features/workout-session/store/use-workout-session-store";
+import { useUser } from "@clerk/expo";
+import { useQueryClient } from "@tanstack/react-query";
+import { EHomeQueryKeys } from "@/features/home/queries/key";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -53,6 +56,8 @@ const ENERGY_OPTIONS: {
 export default function SessionComplete() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
 
   // ── Store data ─────────────────────────────────────────────────────────────
@@ -136,6 +141,11 @@ export default function SessionComplete() {
       {
         onSuccess: () => {
           resetSession();
+          if (user?.id) {
+            queryClient.invalidateQueries({
+              queryKey: [EHomeQueryKeys.GetHomeDashboard, user.id],
+            });
+          }
           router.replace("/(tabs)/workout");
         },
         onError: () => {

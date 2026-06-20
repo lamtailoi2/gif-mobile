@@ -110,7 +110,7 @@ Return ONLY JSON:
 export async function saveAiWorkoutPlan(userId: string, plan: IWorkoutPlanResponse): Promise<void> {
   try {
     const docRef = doc(db, USER_AI_PLANS_COLLECTION, userId);
-    await setDoc(docRef, { ...plan, updatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(docRef, { ...plan, currentPlanIndex: 0, updatedAt: new Date().toISOString() });
   } catch (error) {
     console.error("Failed to save AI plan to Firestore:", error);
   }
