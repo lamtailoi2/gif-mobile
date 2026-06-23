@@ -1,30 +1,22 @@
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { useTheme } from "@/hooks/use-theme";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useUser } from '@clerk/expo';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppHeader from '@/components/app-header';
+import { useTheme } from '@/hooks/use-theme';
+import CoachFeature from '@/features/coach/coach';
 
 export default function CoachScreen() {
   const theme = useTheme();
+  const { user } = useUser();
+
+  const avatarUrl = user?.imageUrl;
 
   return (
     <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: theme.background,
-      }}
+      style={{ flex: 1, backgroundColor: theme.background }}
+      edges={['top']}
     >
-      <ThemedView
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ThemedText style={{ fontSize: 18 }}>🧠 Coach Screen</ThemedText>
-        <ThemedText style={{ color: theme.onSurfaceVariant, marginTop: 8 }}>
-          Coming soon...
-        </ThemedText>
-      </ThemedView>
+      <AppHeader title="G.I.F" avatarUrl={avatarUrl} />
+      <CoachFeature />
     </SafeAreaView>
   );
 }

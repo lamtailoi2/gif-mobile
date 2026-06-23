@@ -1,6 +1,8 @@
 export const CLERK_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
+export const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
+
 export const FIREBASE_CONFIG = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
