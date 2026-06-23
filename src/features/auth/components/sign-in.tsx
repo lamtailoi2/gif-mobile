@@ -1,3 +1,4 @@
+import { BrandHeader } from "@/features/auth/components/brand-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GIFColors } from "@/constants/theme";
@@ -5,7 +6,6 @@ import { useAuthLoading } from "@/context/auth-loading-context";
 import { useSignIn, useSSO } from "@clerk/expo";
 import { FontAwesome } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
+import { SignInForm } from "../libs/schema";
 
 const signInSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -129,22 +130,7 @@ export const SignIn = () => {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Brand header */}
-            <View className="items-center mb-8">
-              <View className="w-[100px] h-[100px] rounded-full overflow-hidden mb-4 border border-neon-green/30">
-                <Image
-                  source={require("@/assets/images/icon.png")}
-                  style={{ width: 100, height: 100 }}
-                  contentFit="cover"
-                />
-              </View>
-              <Text className="font-display text-[36px] font-extrabold text-neon-green tracking-[-0.72px] mb-1">
-                G.I.F
-              </Text>
-              <Text className="font-body text-sm text-on-surface-variant opacity-70">
-                Train Smarter. Adapt Automatically.
-              </Text>
-            </View>
+            <BrandHeader />
 
             {/* Glass form card */}
             <View className="bg-[rgba(32,31,31,0.6)] border border-white/[0.07] rounded-xl p-6 gap-4">

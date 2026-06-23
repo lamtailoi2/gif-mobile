@@ -1,10 +1,11 @@
+import { BrandHeader } from '@/features/auth/components/brand-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GIFColors } from '@/constants/theme';
 import { useAuthLoading } from '@/context/auth-loading-context';
 import { useClerk, useSignUp, useSSO } from '@clerk/expo';
+import { FontAwesome } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -22,20 +23,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SignUpForm, signUpSchema } from '../libs/schema';
 
 
-
-function GoogleIcon({ size = 20 }: { size?: number }) {
-  const r = size / 2;
-  return (
-    <View style={{ width: size, height: size, borderRadius: r, overflow: 'hidden', backgroundColor: '#fff' }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, width: r, height: r, backgroundColor: '#4285F4' }} />
-      <View style={{ position: 'absolute', top: 0, right: 0, width: r, height: r, backgroundColor: '#EA4335' }} />
-      <View style={{ position: 'absolute', bottom: 0, left: 0, width: r, height: r, backgroundColor: '#FBBC05' }} />
-      <View style={{ position: 'absolute', bottom: 0, right: 0, width: r, height: r, backgroundColor: '#34A853' }} />
-      <View style={{ position: 'absolute', top: size * 0.2, left: size * 0.2, width: size * 0.6, height: size * 0.6, borderRadius: size * 0.3, backgroundColor: '#fff' }} />
-      <View style={{ position: 'absolute', top: size * 0.4, left: size * 0.5, width: size * 0.3, height: size * 0.2, backgroundColor: '#4285F4' }} />
-    </View>
-  );
-}
 
 export const SignUp = () => {
   const router = useRouter();
@@ -150,22 +137,7 @@ export const SignUp = () => {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Brand header */}
-            <View className="items-center mb-8">
-              <View className="w-[100px] h-[100px] rounded-full overflow-hidden mb-4 border border-electric-blue/30">
-                <Image
-                  source={require('@/assets/images/icon.png')}
-                  style={{ width: 100, height: 100 }}
-                  contentFit="cover"
-                />
-              </View>
-              <Text className="font-display text-[36px] font-extrabold text-neon-green tracking-[-0.72px] mb-1">
-                G.I.F
-              </Text>
-              <Text className="font-body text-sm text-on-surface-variant opacity-70">
-                Train Smarter. Adapt Automatically.
-              </Text>
-            </View>
+            <BrandHeader borderVariant="electric-blue" />
 
             {/* Glass form card */}
             <View className="bg-[rgba(32,31,31,0.6)] border border-white/[0.07] rounded-xl p-6 gap-4">
@@ -327,7 +299,11 @@ export const SignUp = () => {
                       <ActivityIndicator size="small" color={GIFColors.electricBlue} />
                     ) : (
                       <View className="flex-row items-center gap-2.5">
-                        <GoogleIcon size={20} />
+                        <FontAwesome
+                          name="google"
+                          size={16}
+                          color={GIFColors.electricBlue}
+                        />
                         <Text className="font-body text-base font-semibold text-electric-blue">
                           Continue with Google
                         </Text>
