@@ -1,3 +1,5 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { IWorkoutRoutine } from "@/interfaces/workout-routine.interface";
@@ -6,6 +8,8 @@ import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.s
 import { ITodaysWorkout } from "../types/dashboard";
 import { ROUTINES_COLLECTION, WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 import { getLocalDateString } from "@/utils/date";
+
+const todaysWorkoutCacheKey = (uid: string) => `offline:todaysWorkout:${uid}`;
 
 const getTodaysRoutine = (
   routines: IWorkoutRoutine[],
@@ -17,10 +21,15 @@ const getTodaysRoutine = (
   return routines[dayOfWeek % routines.length];
 };
 
+const completedTodayCacheKey = (uid: string) => `offline:completedToday:${uid}`;
+
 const getCompletedTodaySessionId = async (
   userId: string,
 ): Promise<string | undefined> => {
   try {
+    if (!(await isOnline())) {
+      return offlineCache.get<string>(completedTodayCacheKey(userId));
+    }
     const todayStr = getLocalDateString(new Date());
     const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
     const q = query(sessionsRef, where("userId", "==", userId));
@@ -28,16 +37,25 @@ const getCompletedTodaySessionId = async (
     const todaySession = snapshot.docs.find(
       (d) => getLocalDateString((d.data() as IWorkoutSession).completedAt) === todayStr,
     );
-    return todaySession?.id;
+    const sessionId = todaySession?.id;
+    if (sessionId) {
+      await offlineCache.set(completedTodayCacheKey(userId), sessionId);
+    }
+    return sessionId;
   } catch (e) {
     console.error("Error checking today's completion:", e);
-    return undefined;
+    return offlineCache.get<string>(completedTodayCacheKey(userId));
   }
 };
 
 export const getTodaysWorkout = async (
   userId: string,
 ): Promise<ITodaysWorkout> => {
+  if (!(await isOnline())) {
+    const cached = await offlineCache.get<ITodaysWorkout>(todaysWorkoutCacheKey(userId));
+    if (cached) return cached;
+  }
+
   const [completedSessionId] = await Promise.all([
     getCompletedTodaySessionId(userId),
   ]);
@@ -45,13 +63,22 @@ export const getTodaysWorkout = async (
   let routines: IWorkoutRoutine[] = [];
 
   try {
-    const snapshot = await getDocs(collection(db, ROUTINES_COLLECTION));
-    routines = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as Omit<IWorkoutRoutine, "id">),
-    }));
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutRoutine[]>("offline:workout_routines");
+      if (cached) routines = cached;
+    }
+    if (routines.length === 0) {
+      const snapshot = await getDocs(collection(db, ROUTINES_COLLECTION));
+      routines = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<IWorkoutRoutine, "id">),
+      }));
+      await offlineCache.set("offline:workout_routines", routines);
+    }
   } catch (e) {
     console.error("Error fetching routines:", e);
+    const cached = await offlineCache.get<IWorkoutRoutine[]>("offline:workout_routines");
+    if (cached) routines = cached;
   }
 
   const aiPlan = await getAiWorkoutPlan(userId);
@@ -103,10 +130,14 @@ export const getTodaysWorkout = async (
     };
   })();
 
-  return {
+  const result: ITodaysWorkout = {
     ...base,
     isCompleted: !!completedSessionId,
     hasAiPlan,
     completedSessionId,
   };
+
+  await offlineCache.set(todaysWorkoutCacheKey(userId), result);
+
+  return result;
 };

@@ -6,7 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { EHomeQueryKeys } from "@/features/home/queries/key";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { MUSCLE_GROUP_MAPPING } from "@/features/exercise-library/constants/muscle-group-mapping";
 import {
   ActivityIndicator,
   Alert,
@@ -61,7 +62,7 @@ export default function SessionComplete() {
   const { mutate: saveSession, isPending } = useSaveWorkoutSession();
 
   // ── Store data ─────────────────────────────────────────────────────────────
-  const { routine, uiExercises, getPayloadLogs, sessionStartedAt, sessionSaved, markSessionSaved, resetSessionSaved, resetSession } =
+  const { routine, exercises, uiExercises, getPayloadLogs, sessionStartedAt, sessionSaved, markSessionSaved, resetSessionSaved, resetSession } =
     useWorkoutSessionStore();
 
   // ── Tính totalVolume từ uiExercises thực tế ──────────────────────────────
@@ -81,19 +82,71 @@ export default function SessionComplete() {
 
   const durationMin = Math.round(durationSec / 60);
 
-  // ── Muscle breakdown — auto-populate từ routine.muscleGroups ─────────────
-  const availableMuscles: string[] = routine?.muscleGroups ?? [
-    "chest",
-    "back",
-    "legs",
-    "arms",
-  ];
+  // ── Muscle breakdown — auto-populate từ routine.muscleGroups hoặc exercises ─────────────
+  const availableMuscles = useMemo(() => {
+    if (routine?.muscleGroups && routine.muscleGroups.length > 0) {
+      const resolved = new Set<string>();
+      routine.muscleGroups.forEach((m) => {
+        const lower = m.toLowerCase();
+        if (MUSCLE_LABELS[lower]) {
+          resolved.add(lower);
+        } else {
+          for (const [hl, detailed] of Object.entries(MUSCLE_GROUP_MAPPING)) {
+            if (detailed.includes(lower as any)) {
+              resolved.add(hl);
+            }
+          }
+        }
+      });
+      if (resolved.size > 0) {
+        return Array.from(resolved);
+      }
+    }
+
+    if (exercises && exercises.length > 0) {
+      const resolved = new Set<string>();
+      exercises.forEach((ex) => {
+        if (ex.muscleGroups) {
+          ex.muscleGroups.forEach((m) => {
+            const lower = m.toLowerCase();
+            if (MUSCLE_LABELS[lower]) {
+              resolved.add(lower);
+            } else {
+              for (const [hl, detailed] of Object.entries(MUSCLE_GROUP_MAPPING)) {
+                if (detailed.includes(lower as any)) {
+                  resolved.add(hl);
+                }
+              }
+            }
+          });
+        }
+      });
+      if (resolved.size > 0) {
+        return Array.from(resolved);
+      }
+    }
+
+    return ["chest", "back", "legs", "arms"];
+  }, [routine, exercises]);
 
   const [selectedMuscles, setSelectedMuscles] = useState<
     Record<string, boolean>
-  >(() =>
-    Object.fromEntries(availableMuscles.map((m) => [m, true]))
-  );
+  >({});
+
+  // Sync selectedMuscles khi availableMuscles thay đổi
+  useEffect(() => {
+    if (availableMuscles.length > 0) {
+      setSelectedMuscles((prev) => {
+        const next = { ...prev };
+        availableMuscles.forEach((m) => {
+          if (next[m] === undefined) {
+            next[m] = true;
+          }
+        });
+        return next;
+      });
+    }
+  }, [availableMuscles]);
 
   const toggleMuscle = (muscle: string) => {
     setSelectedMuscles((prev) => ({ ...prev, [muscle]: !prev[muscle] }));

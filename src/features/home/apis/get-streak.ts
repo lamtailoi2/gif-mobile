@@ -1,3 +1,5 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
@@ -5,11 +7,41 @@ import { IStreak } from "../types/dashboard";
 import { WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 import { getLocalDateString } from "@/utils/date";
 
-const streakToPercentile = (streak: number): number => {
-  if (streak >= 30) return 1;
-  if (streak >= 14) return 5;
-  if (streak >= 7) return 15;
-  if (streak >= 3) return 30;
+const streakCacheKey = (uid: string) => `offline:streak:${uid}`;
+
+/**
+ * Lấy ngày đầu tuần (Thứ Hai) của một ngày bất kỳ.
+ * Trả về chuỗi "YYYY-WW" để dễ nhóm theo tuần.
+ */
+const getWeekKey = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  // Tính ngày Thứ Hai của tuần chứa date này
+  const day = date.getDay(); // 0=CN, 1=T2, ..., 6=T7
+  const diff = (day === 0 ? -6 : 1 - day); // khoảng cách đến T2
+  const monday = new Date(date.getTime() + diff * 86_400_000);
+  // Format: "YYYY-WNN" ví dụ "2025-W24"
+  const year = monday.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const weekNum = Math.ceil(
+    ((monday.getTime() - startOfYear.getTime()) / 86_400_000 + startOfYear.getDay() + 1) / 7
+  );
+  return `${year}-W${String(weekNum).padStart(2, "0")}`;
+};
+
+/**
+ * Lấy week key của tuần hiện tại và các tuần trước đó.
+ * offset = 0 là tuần hiện tại, offset = -1 là tuần trước, v.v.
+ */
+const getOffsetWeekKey = (baseDate: Date, offset: number): string => {
+  const shifted = new Date(baseDate.getTime() + offset * 7 * 86_400_000);
+  return getWeekKey(getLocalDateString(shifted));
+};
+
+const weekStreakToPercentile = (weeks: number): number => {
+  if (weeks >= 12) return 1;
+  if (weeks >= 8) return 5;
+  if (weeks >= 4) return 10;
+  if (weeks >= 2) return 25;
   return 50;
 };
 
@@ -17,47 +49,57 @@ export const getStreak = async (userId: string): Promise<IStreak> => {
   let sessions: IWorkoutSession[] = [];
 
   try {
-    const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    const q = query(
-      sessionsRef,
-      where("userId", "==", userId),
-      orderBy("completedAt", "desc"),
-      limit(30)
-    );
-    const snapshot = await getDocs(q);
-    sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutSession[]>(streakCacheKey(userId));
+      if (cached) sessions = cached;
+    }
+    if (sessions.length === 0) {
+      const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
+      const q = query(
+        sessionsRef,
+        where("userId", "==", userId),
+        orderBy("completedAt", "desc"),
+        limit(100)
+      );
+      const snapshot = await getDocs(q);
+      sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+      await offlineCache.set(streakCacheKey(userId), sessions);
+    }
   } catch (e) {
     console.error("Error fetching streak data:", e);
-    return { days: 0, percentile: 50 };
+    const cached = await offlineCache.get<IWorkoutSession[]>(streakCacheKey(userId));
+    if (cached) sessions = cached;
+    if (sessions.length === 0) return { days: 0, percentile: 50 };
   }
 
   if (sessions.length === 0) {
     return { days: 0, percentile: 50 };
   }
 
-  const workoutDates = new Set(
-    sessions.map((s) => getLocalDateString(s.completedAt)),
+  // Nhóm các buổi tập theo tuần (week key)
+  const workoutWeeks = new Set(
+    sessions.map((s) => getWeekKey(getLocalDateString(s.completedAt)))
   );
 
   const today = new Date();
-  const todayStr = getLocalDateString(today);
-  const yesterdayStr = getLocalDateString(new Date(today.getTime() - 86_400_000));
+  const currentWeekKey = getOffsetWeekKey(today, 0);
+  const lastWeekKey = getOffsetWeekKey(today, -7);
 
-  if (!workoutDates.has(todayStr) && !workoutDates.has(yesterdayStr)) {
+  // Nếu cả tuần này lẫn tuần trước đều không có buổi tập → streak = 0
+  if (!workoutWeeks.has(currentWeekKey) && !workoutWeeks.has(lastWeekKey)) {
     return { days: 0, percentile: 50 };
   }
 
-  let checkDate = workoutDates.has(todayStr)
-    ? new Date(today)
-    : new Date(today.getTime() - 86_400_000);
-
+  // Bắt đầu đếm từ tuần gần nhất có tập
+  let weekOffset = workoutWeeks.has(currentWeekKey) ? 0 : -7;
   let streak = 0;
+
   while (true) {
-    const dateStr = getLocalDateString(checkDate);
-    if (!workoutDates.has(dateStr)) break;
+    const weekKey = getOffsetWeekKey(today, weekOffset);
+    if (!workoutWeeks.has(weekKey)) break;
     streak++;
-    checkDate = new Date(checkDate.getTime() - 86_400_000);
+    weekOffset -= 7; // lui về tuần trước
   }
 
-  return { days: streak, percentile: streakToPercentile(streak) };
+  return { days: streak, percentile: weekStreakToPercentile(streak) };
 };

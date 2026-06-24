@@ -1,9 +1,14 @@
+import { offlineCache } from '@/lib/offline-cache';
+import { isOnline } from '@/hooks/use-network';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IExerciseLog } from '../../../interfaces/workout-session.interface';
 import { EIntensity, IWorkoutSession } from '../types/history';
 import { getLocalDateString } from '@/utils/date';
+
+const historyCacheKey = (uid: string) => `offline:history:${uid}`;
+const sessionCacheKey = (sid: string) => `offline:session:${sid}`;
 
 const determineWorkoutType = (muscleGroups: string[]): string => {
     const muscleSet = new Set(muscleGroups.map(m => m.toLowerCase()));
@@ -29,12 +34,16 @@ const mapIntensity = (rating: number | undefined): EIntensity => {
 export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession[]> => {
     if (!userId) return [];
     try {
+        if (!(await isOnline())) {
+            const cached = await offlineCache.get<IWorkoutSession[]>(historyCacheKey(userId));
+            if (cached) return cached;
+        }
         const q = query(collection(db, WORKOUT_SESSIONS_COLLECTION), where('userId', '==', userId), orderBy('completedAt', 'desc'));
         const snapshot = await getDocs(q);
 
-        return snapshot.docs.map((docItem) => {
+        const sessions = snapshot.docs.map((docItem) => {
             const data = docItem.data();
-            if (!data.completedAt) return null; // Chỉ cần field này là đủ sống
+            if (!data.completedAt) return null;
 
             const muscleBreakdown = data.muscleBreakdown || {};
             const muscleGroups = Object.keys(muscleBreakdown).filter(k => muscleBreakdown[k]);
@@ -48,15 +57,23 @@ export const getWorkoutHistory = async (userId: string): Promise<IWorkoutSession
                 muscleGroups: muscleGroups,
             } as IWorkoutSession;
         }).filter((session) => session !== null) as IWorkoutSession[];
+
+        await offlineCache.set(historyCacheKey(userId), sessions);
+        return sessions;
     } catch (error) {
         console.error('Lỗi History:', error);
-        return [];
+        const cached = await offlineCache.get<IWorkoutSession[]>(historyCacheKey(userId));
+        return cached ?? [];
     }
 };
 
 export const getLatestSessionFullLogs = async (userId: string): Promise<IExerciseLog[]> => {
     if (!userId) return [];
     try {
+        if (!(await isOnline())) {
+            const cached = await offlineCache.get<IExerciseLog[]>(historyCacheKey(userId) + ':logs');
+            if (cached) return cached;
+        }
         const q = query(
             collection(db, WORKOUT_SESSIONS_COLLECTION),
             where('userId', '==', userId),
@@ -67,24 +84,33 @@ export const getLatestSessionFullLogs = async (userId: string): Promise<IExercis
         if (snapshot.empty) return [];
         
         const data = snapshot.docs[0].data();
-        return data.exerciseLogs || [];
+        const logs = data.exerciseLogs || [];
+        await offlineCache.set(historyCacheKey(userId) + ':logs', logs);
+        return logs;
     } catch (error) {
         console.error('Lỗi lấy full logs:', error);
-        return [];
+        const cached = await offlineCache.get<IExerciseLog[]>(historyCacheKey(userId) + ':logs');
+        return cached ?? [];
     }
 };
 
 export const getSessionById = async (sessionId: string) => {
     if (!sessionId) return null;
     try {
+        if (!(await isOnline())) {
+            const cached = await offlineCache.get(sessionCacheKey(sessionId));
+            if (cached) return cached;
+        }
         const docRef = doc(db, WORKOUT_SESSIONS_COLLECTION, sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() };
+            const data = { id: docSnap.id, ...docSnap.data() };
+            await offlineCache.set(sessionCacheKey(sessionId), data);
+            return data;
         }
         return null;
     } catch (error) {
         console.error('Error fetching session details:', error);
-        return null;
+        return offlineCache.get(sessionCacheKey(sessionId));
     }
 };

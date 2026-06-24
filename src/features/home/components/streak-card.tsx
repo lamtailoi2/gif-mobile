@@ -34,7 +34,7 @@ export default function StreakCard({ streak }: IStreakCardProps) {
             {streak.days}
           </Text>
           <Text className="text-body-lg font-body text-on-surface-variant">
-            Days
+            Weeks
           </Text>
         </View>
 
