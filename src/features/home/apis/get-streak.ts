@@ -1,9 +1,13 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { IStreak } from "../types/dashboard";
 import { WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 import { getLocalDateString } from "@/utils/date";
+
+const streakCacheKey = (uid: string) => `offline:streak:${uid}`;
 
 /**
  * Lấy ngày đầu tuần (Thứ Hai) của một ngày bất kỳ.
@@ -45,19 +49,27 @@ export const getStreak = async (userId: string): Promise<IStreak> => {
   let sessions: IWorkoutSession[] = [];
 
   try {
-    const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    // Lấy tối đa 100 buổi gần nhất (đủ cho ~3 tháng dù tập 1 buổi/ngày)
-    const q = query(
-      sessionsRef,
-      where("userId", "==", userId),
-      orderBy("completedAt", "desc"),
-      limit(100)
-    );
-    const snapshot = await getDocs(q);
-    sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutSession[]>(streakCacheKey(userId));
+      if (cached) sessions = cached;
+    }
+    if (sessions.length === 0) {
+      const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
+      const q = query(
+        sessionsRef,
+        where("userId", "==", userId),
+        orderBy("completedAt", "desc"),
+        limit(100)
+      );
+      const snapshot = await getDocs(q);
+      sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+      await offlineCache.set(streakCacheKey(userId), sessions);
+    }
   } catch (e) {
     console.error("Error fetching streak data:", e);
-    return { days: 0, percentile: 50 };
+    const cached = await offlineCache.get<IWorkoutSession[]>(streakCacheKey(userId));
+    if (cached) sessions = cached;
+    if (sessions.length === 0) return { days: 0, percentile: 50 };
   }
 
   if (sessions.length === 0) {

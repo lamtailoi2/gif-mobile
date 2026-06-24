@@ -7,7 +7,7 @@ import { useUser } from "@clerk/expo";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View, Image } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
@@ -260,7 +260,12 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
         </Text>
       </View>
 
-      <View className="flex-1 px-container-mobile">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerClassName="px-container-mobile pb-8"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Exercise Image/Video Placeholder */}
         <View className="w-full h-64 bg-surface-container-high rounded-3xl items-center justify-center overflow-hidden mb-6">
           {currentEx?.thumbnailUrl ? (
@@ -335,7 +340,7 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
           )
         )}
 
-        <View className="flex-1 justify-end pb-8">
+        <View className="flex-1 justify-end mt-4">
           <Pressable
             onPress={handleCompleteSet}
             className="bg-neon-green rounded-full py-5 items-center justify-center shadow-sm active:opacity-80 active:scale-95"
@@ -345,7 +350,7 @@ export default function ActiveSession({ routineId }: IActiveSessionProps) {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

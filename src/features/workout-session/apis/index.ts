@@ -1,3 +1,5 @@
+import { offlineQueue } from "@/lib/offline-queue";
+import { isOnline } from "@/hooks/use-network";
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { addDoc, collection, doc, getDoc, updateDoc } from "firebase/firestore";
@@ -9,6 +11,7 @@ import { IWorkoutPlanResponse } from "@/features/profile/ai-service/types";
  * Collection: workout_sessions/{autoId}
  *
  * Validation guard: chặn lưu data rác có thể crash UI ở History/Progress.
+ * Offline: queue mutation để sync sau.
  */
 export const saveWorkoutSession = async (
   session: IWorkoutSession
@@ -25,6 +28,15 @@ export const saveWorkoutSession = async (
   }
   if (session.durationSec <= 0) {
     console.warn("[saveWorkoutSession] durationSec is 0 or negative. Session may have been saved immediately after start.");
+  }
+
+  // Offline: queue for later sync
+  if (!(await isOnline())) {
+    await offlineQueue.enqueue({
+      name: "saveWorkoutSession",
+      payload: session,
+    });
+    return "offline-queued";
   }
 
   const ref = await addDoc(

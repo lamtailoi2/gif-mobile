@@ -1,3 +1,5 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { IExercise } from "@/features/exercise-library/types/exercise";
 import { db } from "@/lib/firebase";
 import { IWorkoutRoutine } from "@/interfaces/workout-routine.interface";
@@ -10,17 +12,27 @@ import {
 import { getAiWorkoutPlan } from "@/features/profile/ai-service/training-goals.service";
 import { ROUTINES_COLLECTION, EXERCISE_LIBRARY_COLLECTION } from "@/constants/collections";
 
+const ROUTINES_CACHE_KEY = "offline:workout_routines";
+const EXERCISE_CACHE_PREFIX = "offline:exercise:";
+
 /** Lấy tất cả routines từ Firestore. */
 export const getAllRoutines = async (): Promise<IWorkoutRoutine[]> => {
   try {
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutRoutine[]>(ROUTINES_CACHE_KEY);
+      if (cached) return cached;
+    }
     const snapshot = await getDocs(collection(db, ROUTINES_COLLECTION));
-    return snapshot.docs.map((d) => ({
+    const routines = snapshot.docs.map((d) => ({
       id: d.id,
       ...(d.data() as Omit<IWorkoutRoutine, "id">),
     }));
+    await offlineCache.set(ROUTINES_CACHE_KEY, routines);
+    return routines;
   } catch (error) {
     console.error("Error fetching routines:", error);
-    return [];
+    const cached = await offlineCache.get<IWorkoutRoutine[]>(ROUTINES_CACHE_KEY);
+    return cached ?? [];
   }
 };
 
@@ -57,9 +69,25 @@ export const getRoutineWithExercises = async (
     };
     
     const exerciseDocs = await Promise.all(
-      routine.exerciseIds.map((id) =>
-        getDoc(doc(db, EXERCISE_LIBRARY_COLLECTION, id))
-      )
+      routine.exerciseIds.map(async (id) => {
+        const cacheKey = EXERCISE_CACHE_PREFIX + id;
+        try {
+          if (!(await isOnline())) {
+            const cached = await offlineCache.get<IExercise>(cacheKey);
+            if (cached) return { id, exists: () => true, data: () => cached } as any;
+          }
+          const ref = doc(db, EXERCISE_LIBRARY_COLLECTION, id);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            await offlineCache.set(cacheKey, { id: snap.id, ...snap.data() } as IExercise);
+          }
+          return snap;
+        } catch {
+          const cached = await offlineCache.get<IExercise>(cacheKey);
+          if (cached) return { id, exists: () => true, data: () => cached } as any;
+          return { id, exists: () => false } as any;
+        }
+      })
     );
 
     // Lỗi 1 fix: Log cảnh báo cho các exerciseId không tìm thấy trong Firestore
@@ -105,9 +133,25 @@ export const getRoutineWithExercises = async (
   };
 
   const exerciseDocs = await Promise.all(
-    routine.exerciseIds.map((id) =>
-      getDoc(doc(db, EXERCISE_LIBRARY_COLLECTION, id))
-    )
+    routine.exerciseIds.map(async (id) => {
+      const cacheKey = EXERCISE_CACHE_PREFIX + id;
+      try {
+        if (!(await isOnline())) {
+          const cached = await offlineCache.get<IExercise>(cacheKey);
+          if (cached) return { id, exists: () => true, data: () => cached } as any;
+        }
+        const ref = doc(db, EXERCISE_LIBRARY_COLLECTION, id);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          await offlineCache.set(cacheKey, { id: snap.id, ...snap.data() } as IExercise);
+        }
+        return snap;
+      } catch {
+        const cached = await offlineCache.get<IExercise>(cacheKey);
+        if (cached) return { id, exists: () => true, data: () => cached } as any;
+        return { id, exists: () => false } as any;
+      }
+    })
   );
 
   // Log cảnh báo cho các exerciseId không tìm thấy trong Firestore

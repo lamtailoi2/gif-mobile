@@ -1,27 +1,41 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { collection, getDocs, limit, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { IWorkoutSession } from "@/interfaces/workout-session.interface";
 import { IReadiness } from "../types/dashboard";
 import { WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 
+const readinessCacheKey = (uid: string) => `offline:readiness:${uid}`;
+
 export const getReadiness = async (userId: string): Promise<IReadiness> => {
   let lastSession: IWorkoutSession | undefined;
 
   try {
-    const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    const q = query(
-      sessionsRef,
-      where("userId", "==", userId),
-      orderBy("completedAt", "desc"),
-      limit(1)
-    );
-    const snapshot = await getDocs(q);
-    const sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
-
-    lastSession = sessions[0];
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutSession>(readinessCacheKey(userId));
+      if (cached) lastSession = cached;
+    }
+    if (!lastSession) {
+      const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
+      const q = query(
+        sessionsRef,
+        where("userId", "==", userId),
+        orderBy("completedAt", "desc"),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+      const sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+      lastSession = sessions[0];
+      if (lastSession) {
+        await offlineCache.set(readinessCacheKey(userId), lastSession);
+      }
+    }
   } catch (e) {
     console.error("Error fetching readiness data:", e);
-    return { score: 80, label: "Ready" };
+    const cached = await offlineCache.get<IWorkoutSession>(readinessCacheKey(userId));
+    lastSession = cached ?? undefined;
+    if (!lastSession) return { score: 80, label: "Ready" };
   }
 
   if (!lastSession) {

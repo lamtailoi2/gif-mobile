@@ -1,9 +1,13 @@
 // src/features/progress/apis/index.ts
+import { offlineCache } from '@/lib/offline-cache';
+import { isOnline } from '@/hooks/use-network';
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { WORKOUT_SESSIONS_COLLECTION } from '@/constants/collections';
 import { IProgressDashboardData } from '../types/progress';
 import { getLocalDateString } from '@/utils/date';
+
+const progressCacheKey = (uid: string) => `offline:progress:${uid}`;
 
 /**
  * Calculate 7-day recovery data (most recent 7 days).
@@ -45,6 +49,11 @@ export const getProgressDashboard = async (userId: string): Promise<IProgressDas
     if (!userId) return null;
 
     try {
+        if (!(await isOnline())) {
+            const cached = await offlineCache.get<IProgressDashboardData>(progressCacheKey(userId));
+            if (cached) return cached;
+        }
+
         // Ta cần dữ liệu 6 tháng qua (180 ngày) để vẽ lưới Consistency 18 tuần
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
@@ -81,16 +90,21 @@ export const getProgressDashboard = async (userId: string): Promise<IProgressDas
         const last30Days = sessions.filter(s => new Date(s.completedAt) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
         const avg = Math.round(last30Days.length / 4); // Trung bình buổi/tuần
 
-        return {
-            workoutDates, // Truyền mảng ngày xuống component
+        const result: IProgressDashboardData = {
+            workoutDates,
             recoveryData,
             aiInsight: {
                 text: avg >= 3 ? `You're crushed it! Averaging ${avg} workouts weekly.` : 'Maintain momentum! Aim for 3 workouts this week.',
                 highlight: avg >= 3 ? `${avg} workouts weekly` : '3 workouts this week'
             },
         };
+
+        await offlineCache.set(progressCacheKey(userId), result);
+        return result;
     } catch (error) {
         console.error('Lỗi Progress API:', error);
+        const cached = await offlineCache.get<IProgressDashboardData>(progressCacheKey(userId));
+        if (cached) return cached;
         throw error;
     }
 };

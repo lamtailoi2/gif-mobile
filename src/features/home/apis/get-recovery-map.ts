@@ -1,3 +1,5 @@
+import { offlineCache } from "@/lib/offline-cache";
+import { isOnline } from "@/hooks/use-network";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MUSCLE_GROUP_MAPPING } from "@/features/exercise-library/constants/muscle-group-mapping";
@@ -9,26 +11,38 @@ import {
 } from "../types/dashboard";
 import { WORKOUT_SESSIONS_COLLECTION } from "@/constants/collections";
 
+const recoveryMapCacheKey = (uid: string) => `offline:recoveryMap:${uid}`;
+
 export const getRecoveryMap = async (
   userId: string,
 ): Promise<IRecoveryMap> => {
   let lastSession: IWorkoutSession | undefined;
 
   try {
-    const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
-    const q = query(
-      sessionsRef,
-      where("userId", "==", userId),
-      orderBy("completedAt", "desc"),
-      limit(1)
-    );
-    const snapshot = await getDocs(q);
-    const sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
-
-    lastSession = sessions[0];
+    if (!(await isOnline())) {
+      const cached = await offlineCache.get<IWorkoutSession>(recoveryMapCacheKey(userId));
+      if (cached) lastSession = cached;
+    }
+    if (!lastSession) {
+      const sessionsRef = collection(db, WORKOUT_SESSIONS_COLLECTION);
+      const q = query(
+        sessionsRef,
+        where("userId", "==", userId),
+        orderBy("completedAt", "desc"),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+      const sessions = snapshot.docs.map((d) => d.data() as IWorkoutSession);
+      lastSession = sessions[0];
+      if (lastSession) {
+        await offlineCache.set(recoveryMapCacheKey(userId), lastSession);
+      }
+    }
   } catch (e) {
     console.error("Error fetching recovery map data:", e);
-    return { states: {} };
+    const cached = await offlineCache.get<IWorkoutSession>(recoveryMapCacheKey(userId));
+    lastSession = cached ?? undefined;
+    if (!lastSession) return { states: {} };
   }
 
   if (!lastSession) return { states: {} };
