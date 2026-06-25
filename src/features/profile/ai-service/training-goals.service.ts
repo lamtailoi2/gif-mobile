@@ -1,9 +1,10 @@
-import { getExercisesByCategories } from "@/features/exercise-library/apis";
-import { GOAL_CATEGORY_MAP } from "@/constants/goal-category-map";
-import { IWorkoutPlanResponse } from "./types";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
 import { USER_AI_PLANS_COLLECTION } from "@/constants/collections";
+import { GOAL_CATEGORY_MAP } from "@/constants/goal-category-map";
+import { EExperienceLevel } from "@/constants/profile.constant";
+import { getExercisesByCategories } from "@/features/exercise-library/apis";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { IWorkoutPlanResponse } from "./types";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -36,15 +37,41 @@ export async function generateWorkoutPlan(
 
   console.log(`Sending ${selectedExercises.length} exercises to AI (${preferred.length} preferred + ${filler.length} filler)`);
 
+  // Map string IDs to numeric IDs to reduce token usage
+  const numericIdToOriginalMap = new Map<string, { id: string; name: string }>();
+
   // Chỉ gửi các field tối thiểu cần thiết để AI lên lịch tập
-  const exerciseList = selectedExercises.map((e) => ({
-    id: e.id,
-    n: e.name,
-    c: e.category,
-    m: Array.isArray(e.muscleGroups) ? e.muscleGroups.join(",") : e.muscleGroups,
-    s: e.defaultSets,
-    r: e.defaultReps,
-  }));
+  const exerciseList = selectedExercises.map((e, index) => {
+    const numericId = String(index + 1);
+    numericIdToOriginalMap.set(numericId, { id: e.id, name: e.name });
+    return {
+      id: numericId,
+      n: e.name,
+      c: e.category,
+      m: Array.isArray(e.muscleGroups) ? e.muscleGroups.join(",") : e.muscleGroups,
+      s: e.defaultSets,
+      r: e.defaultReps,
+    };
+  });
+
+  // Xác định số lượng bài tập mỗi ngày dựa trên level
+  const userLevel = profile.level ?? EExperienceLevel.Beginner;
+  let exercisesPerDay = 4;
+  if (userLevel === EExperienceLevel.Intermediate) {
+    exercisesPerDay = 5;
+  } else if (userLevel === EExperienceLevel.Advanced) {
+    exercisesPerDay = 6;
+  }
+
+  const goalRules: Record<string, string> = {
+    build_muscle: `No dedicated cardio-only days. Each day needs at least ${exercisesPerDay - 1} strength/compound exercises. Max 1 cardio or plyometric exercise per day as finisher.`,
+    lose_weight: `Prioritize cardio and plyometric exercises. Each day needs at least ${exercisesPerDay - 1} cardio/plyometric exercises. Max 1 strength exercise per day.`,
+    endurance: `Mix cardio and bodyweight exercises. At least ${Math.floor(exercisesPerDay / 2)} cardio exercises per day. Avoid heavy compound lifts.`,
+    stay_fit: `Balance strength and cardio evenly. Each day should have a mix of both. No more than ${Math.ceil(exercisesPerDay / 2)} cardio exercises per day.`,
+    improve_flexibility: `Prioritize stretching and mobility exercises. Each day needs at least ${exercisesPerDay - 1} stretching exercises.`,
+  };
+
+  const goalRule = goalRules[profile.goal] ?? `Balance exercises based on user goal.`;
 
   const p = {
     goal: profile.goal,
@@ -53,12 +80,19 @@ export async function generateWorkoutPlan(
     daysPerWeek: profile.daysPerWeek,
   };
 
-  const prompt = `Fitness coach. Create a JSON workout plan.
+  const prompt = `Create a ${profile.daysPerWeek}-day workout plan as JSON.
 User: ${JSON.stringify(p)}
-Exercises(id,n=name,c=category,m=muscles,s=sets,r=reps):
-${JSON.stringify(exerciseList)}
-Rules: Use only IDs from list. For cardio/plyometrics/stretching exercises, r=seconds(30,45,60). For strength, r=reps count.
-Return ONLY JSON:
+Exercises(id,n,c,m,s,r): ${JSON.stringify(exerciseList)}
+
+Rules:
+1. Use ONLY exercise IDs from the list above.
+2. Every day MUST have exactly ${exercisesPerDay} exercises, no more, no less.
+3. ${goalRule}
+4. Do NOT repeat the same exercise ID in one days.
+5. Match exercises to the muscle group focus of each day.
+6. Strength exercises: r=rep count. Cardio/plyometric/stretching: r=seconds (30,45, or 60).
+
+Return ONLY this JSON structure:
 {"userAssessment":"...","schedule":[{"day":"Day 1","focus":"...","exercises":[{"exerciseId":"","exerciseName":"","sets":0,"reps":0}]}]}`;
 
   const response = await fetch(GROQ_API_URL, {
@@ -70,14 +104,14 @@ Return ONLY JSON:
     body: JSON.stringify({
       // llama-3.3-70b-versatile: tuân thủ instruction tốt hơn 8b, ít bị hallucinate
       model: "llama-3.3-70b-versatile",
-      max_tokens: 1500,
+      max_tokens: 10000,
       temperature: 0.1,
       // Ép buộc Groq chỉ trả về JSON object thuần, không trả code hay text khác
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: "You are a fitness API. You ONLY output valid JSON. Never write code, never write explanations, never use markdown. Output ONLY a raw JSON object."
+          content: "You are a fitness API. You ONLY output valid JSON. Output raw JSON only. No code, no markdown, no explanations."
         },
         { role: "user", content: prompt }
       ],
@@ -100,7 +134,25 @@ Return ONLY JSON:
     const text = generatedText.trim();
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("No JSON object found in response.");
-    return JSON.parse(match[0]) as IWorkoutPlanResponse;
+    const rawPlan = JSON.parse(match[0]) as IWorkoutPlanResponse;
+
+    // Restore original IDs and names from the numeric mapping
+    const schedule = rawPlan.schedule.map((daySchedule) => ({
+      ...daySchedule,
+      exercises: daySchedule.exercises.map((genExercise) => {
+        const originalInfo = numericIdToOriginalMap.get(String(genExercise.exerciseId));
+        return {
+          ...genExercise,
+          exerciseId: originalInfo ? originalInfo.id : genExercise.exerciseId,
+          exerciseName: originalInfo ? originalInfo.name : genExercise.exerciseName,
+        };
+      }),
+    }));
+
+    return {
+      ...rawPlan,
+      schedule,
+    };
   } catch (error) {
     console.error("Failed to parse response:", generatedText, error);
     throw new Error("Failed to parse AI response as JSON.");
