@@ -11,3 +11,8 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
 };
+
+export const BREVO_API_KEY = process.env.EXPO_PUBLIC_BREVO_API_KEY ?? '';
+export const BREVO_SENDER_EMAIL = process.env.EXPO_PUBLIC_BREVO_SENDER_EMAIL ?? '';
+
+

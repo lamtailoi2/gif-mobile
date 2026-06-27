@@ -19,6 +19,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { sendWorkoutCompleteNotification } from "@/lib/notifications";
+import { db } from "@/lib/firebase";
+import { addDoc, collection } from "firebase/firestore";
+import { NOTIFICATIONS_COLLECTION } from "@/constants/collections";
+import { ENotificationType } from "@/interfaces/notification.interface";
 
 import { EnergyLevel } from "@/interfaces/workout-session.interface";
 
@@ -193,13 +198,36 @@ export default function SessionComplete() {
       },
       {
         onSuccess: () => {
-          resetSession();
+          // 1. Send congratulatory local notification
+          const notifTitle = '🏆 Workout hoàn thành!';
+          const notifBody = `${routine?.name ? `"${routine.name}" — ` : ''}${durationMin} phút · ${totalVolume} kg tổng khối lượng. Tuyệt vời, hãy tiếp tục phát huy!`;
+          sendWorkoutCompleteNotification(routine?.name ?? '', durationMin, totalVolume);
+
+          // 2. Save to Firestore notification history
+          if (user?.id) {
+            addDoc(collection(db, NOTIFICATIONS_COLLECTION), {
+              userId: user.id,
+              title: notifTitle,
+              body: notifBody,
+              type: ENotificationType.SystemInfo,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+              data: { screen: '/(tabs)/progress', type: 'workout_complete' },
+            }).catch((e: unknown) =>
+              console.warn('[SessionComplete] Failed to save notification history:', e)
+            );
+          }
+
+          // 3. Reset session + invalidate queries + navigate
           if (user?.id) {
             queryClient.invalidateQueries({
               queryKey: [EHomeQueryKeys.GetHomeDashboard, user.id],
             });
           }
           router.replace("/(tabs)/workout");
+          setTimeout(() => {
+            resetSession();
+          }, 100);
         },
         onError: () => {
           // Reset flag để user có thể retry
@@ -222,8 +250,10 @@ export default function SessionComplete() {
         </Text>
         <Pressable
           onPress={() => {
-            resetSession();
             router.back();
+            setTimeout(() => {
+              resetSession();
+            }, 100);
           }}
           className="w-10 h-10 justify-center items-center rounded-full bg-surface-container/60 border border-surface-variant/25 active:opacity-70"
           accessibilityLabel="Close screen"

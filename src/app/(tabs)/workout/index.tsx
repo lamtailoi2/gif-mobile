@@ -116,6 +116,13 @@ export default function WorkoutScreen() {
         }
         await saveAiWorkoutPlan(user.id, result);
         
+        // Send email notification to user about their new AI plan
+        const userEmail = user.primaryEmailAddress?.emailAddress;
+        if (userEmail) {
+          const { sendAiPlanReadyEmail } = await import("@/lib/email");
+          sendAiPlanReadyEmail(userEmail, user.firstName || "Hội viên");
+        }
+        
         // Invalidate Home Dashboard cache so it fetches the newly created AI plan immediately
         queryClient.invalidateQueries({
           queryKey: [EHomeQueryKeys.GetHomeDashboard, user.id],

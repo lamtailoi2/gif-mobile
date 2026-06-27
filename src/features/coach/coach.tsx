@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useUser } from '@clerk/expo';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 import { streamChat } from './ai-service/gemini.service';
 import { IChatMessage, IGeminiContent, INutritionContext } from './ai-service/types';
 import { useCoachStore } from './store/use-coach-store';
@@ -38,6 +39,7 @@ function buildGeminiHistory(messages: IChatMessage[]): IGeminiContent[] {
 
 export default function CoachFeature() {
   const { user } = useUser();
+  const { handleError } = useErrorHandler({ screen: 'Coach' });
   const flatListRef = useRef<FlatList>(null);
 
   const {
@@ -89,14 +91,14 @@ export default function CoachFeature() {
         (token) => { appendToLastMessage(token); scrollToBottom(); },
         () => { setLastMessageStreaming(false); setIsStreaming(false); scrollToBottom(); },
         (err) => {
-          console.error('[Coach] Stream error:', err);
+          handleError(err, { type: 'chat_stream_error' });
           appendToLastMessage('\n\n⚠️ Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.');
           setLastMessageStreaming(false);
           setIsStreaming(false);
         }
       );
     },
-    [isStreaming, messages, user, addMessage, appendToLastMessage, setLastMessageStreaming, setIsStreaming, scrollToBottom]
+    [isStreaming, messages, user, addMessage, appendToLastMessage, setLastMessageStreaming, setIsStreaming, scrollToBottom, handleError]
   );
 
   const renderItem = useCallback(

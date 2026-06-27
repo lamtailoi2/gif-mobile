@@ -36,9 +36,11 @@ export default function ProfileScreen() {
           <PersonalInfoSection />
           <TrainingGoalsSection />
 
-          <Button variant="outline" onPress={onSignOut}>
-            Sign Out
-          </Button>
+          <View className="mt-6 gap-y-3">
+            <Button variant="outline" onPress={onSignOut}>
+              Sign Out
+            </Button>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>

@@ -23,6 +23,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { EHomeQueryKeys } from "@/features/home/queries/key";
+import { sendLocalNotification } from "@/lib/notifications";
+import { db } from "@/lib/firebase";
+import { addDoc, collection } from "firebase/firestore";
+import { NOTIFICATIONS_COLLECTION } from "@/constants/collections";
+import { ENotificationType } from "@/interfaces/notification.interface";
 
 const getPlanCacheKey = (userId?: string) =>
   userId ? `ai_workout_plan_cached_${userId}` : "ai_workout_plan_cached";
@@ -76,6 +81,30 @@ export default function CreatePlanScreen() {
         await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
       }
       await saveAiWorkoutPlan(user.id, result);
+
+      // Notify user via local notification + save to Firestore history
+      const notifTitle = '🤖 Kế hoạch AI đã sẵn sàng!';
+      const notifBody = 'AI Coach vừa tạo xong lịch tập tuần này dành riêng cho bạn. Hãy bắt đầu ngay!';
+      sendLocalNotification(notifTitle, notifBody, {
+        screen: '/(tabs)/workout',
+        type: ENotificationType.AiPlanReady,
+      });
+      addDoc(collection(db, NOTIFICATIONS_COLLECTION), {
+        userId: user.id,
+        title: notifTitle,
+        body: notifBody,
+        type: ENotificationType.AiPlanReady,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        data: { screen: '/(tabs)/workout' },
+      }).catch((e: unknown) => console.warn('[CreatePlan] Failed to save notification history:', e));
+
+      // NOTE: Email kept for future use — replaced by local notification above
+      // const userEmail = user.primaryEmailAddress?.emailAddress;
+      // if (userEmail) {
+      //   const { sendAiPlanReadyEmail } = await import("@/lib/email");
+      //   sendAiPlanReadyEmail(userEmail, user.firstName || "Hội viên");
+      // }
 
       queryClient.invalidateQueries({
         queryKey: [EHomeQueryKeys.GetHomeDashboard, user.id],

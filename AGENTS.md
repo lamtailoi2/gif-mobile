@@ -34,6 +34,7 @@ No test framework is configured.
 | `(tabs)/` | `index.tsx` | **Home Dashboard** — AI greeting, readiness gauge, streak, today's workout, recovery map |
 | | `coach.tsx` | **Coach** — Placeholder ("Coming soon...") |
 | | `profile.tsx` | **Profile** — Avatar, personal info, training goals, sign out |
+| | `notifications.tsx` | **Notifications** — Notifications history & read indicators (hidden from tab bar) |
 | | `workout/index.tsx` | **Workout Hub** — Exercise Library tab + AI Plan tab |
 | | `workout/[id].tsx` | Exercise detail (currently placeholder) |
 | | `workout/guide/[id].tsx` | Exercise guide (YouTube video, execution steps, mistakes, alternatives) |
@@ -57,6 +58,8 @@ No test framework is configured.
 | **History** | `src/features/history/` | Paginated workout history with time view (Week/Month/All), date picker, search, type filter (PUSH/PULL/LEGS). Zustand filter store. Session details view. |
 | **Progress** | `src/features/progress/` | Analytics: 18-week consistency grid, volume-over-time chart, 7-day recovery/intensity chart, AI text insight, health metrics (HRV, sleep score). |
 | **Profile / AI** | `src/features/profile/` | Profile header, editable personal info & goals (reuses onboarding components). AI service uses Groq API (llama-3.3-70b-versatile) to generate personalized weekly workout plans, saved to `user_ai_plans` Firestore collection + SecureStore cache. Filters exercises by goal category via `getExercisesByCategories` before sending to Groq to reduce token usage. |
+| **Notifications** | `src/features/notifications/` | Push notification management, token registration, mark-as-read updates, history feeds. |
+| **Email Service** | `src/lib/email.ts` | Integrates with the Brevo REST API to route important push alerts (Streak warnings, AI plan availability) to users' email addresses directly. |
 
 ## UI Components
 
@@ -64,7 +67,7 @@ No test framework is configured.
 
 | Component | Description |
 |---|---|
-| `AppHeader` | Top bar: avatar, title ("G.I.F"), notification bell (unwired) |
+| `AppHeader` | Top bar: avatar, title ("G.I.F"), notification bell with live unread badge |
 | `AnimatedSplashOverlay` | Blue splash animation on launch (Reanimated keyframes) |
 | `AuthLoadingOverlay` | Full-screen loading with logo + animated progress bar |
 | `ThemedText` | `<Text>` wrapper with preset variants (title, subtitle, link, code, etc.) |
@@ -90,7 +93,7 @@ No test framework is configured.
 | `src/hooks/use-color-scheme.ts` | Re-exports `useColorScheme` from React Native |
 | `src/hooks/use-theme.ts` | Returns `Colors[scheme]` (light/dark colors from theme constants) |
 | `src/hooks/use-difficulty-tone.ts` | Returns Tailwind classes (bg, border, text) by difficulty (beginner=green, intermediate=orange, advanced=red) |
-| Feature hooks | `useHomeDashboard`, `useExercisesFilter`, `useFilteredExercisesCount`, `useRoutineWithExercises`, `useSaveWorkoutSession` |
+| Feature hooks | `useHomeDashboard`, `useExercisesFilter`, `useFilteredExercisesCount`, `useRoutineWithExercises`, `useSaveWorkoutSession`, `useErrorHandler` |
 
 ## Zustand Stores
 
@@ -115,6 +118,7 @@ No test framework is configured.
 | `src/interfaces/profile.interface.ts` | `IUserProfile` (gender, dateOfBirth, weightKg, heightCm, goal, level, daysPerWeek, onboarded) |
 | `src/interfaces/workout-routine.interface.ts` | `IWorkoutRoutine` (name, focus, durationMin, intensity, load, exerciseIds, muscleGroups, dayOfWeek) |
 | `src/interfaces/workout-session.interface.ts` | `IWorkoutSession`, `IExerciseLog`, `ISetLog`, `EnergyLevel` (drained \| steady \| charged) |
+| `src/interfaces/notification.interface.ts` | `INotification`, `ENotificationType` (WorkoutReminder \| StreakWarning \| AiPlanReady \| SystemInfo) |
 | `src/constants/profile.constant.ts` | `EFitnessGoal` (LoseWeight/BuildMuscle/ImproveEndurance/GeneralFitness), `EExperienceLevel` (Beginner/Intermediate/Advanced), `EGender` (Male/Female/Other) |
 | `src/features/exercise-library/types/exercise.ts` | `IExercise` (name, slug, category, muscleGroups, equipment, difficulty, defaultSets, defaultReps) |
 | `src/features/exercise-guide/types/guide.ts` | `IExerciseGuide`, `IExecutionStep`, `IMistake`, `IAlternativeExercise` |
@@ -133,6 +137,8 @@ No test framework is configured.
 | `src/lib/env.ts` | Reads `EXPO_PUBLIC_*` env vars for Clerk + Firebase |
 | `src/lib/profile.ts` | `getUserProfile()`, `isProfileComplete()`, `isOnboarded()`, `getNextOnboardingStep()`, option arrays (GOAL_OPTIONS, GENDER_OPTIONS, LEVEL_OPTIONS, DAYS_OPTIONS) |
 | `src/lib/get-youtube-video-id.ts` | Extracts YouTube video ID from URL |
+| `src/lib/analytics.ts` | Central logging for errors (`error_logs`) and user events (`user_events`) |
+| `src/lib/notifications.ts` | FCM push token registration + local scheduled reminders |
 | `src/context/auth-loading-context.tsx` | `AuthLoadingProvider` + `useAuthLoading` (boolean loading state) |
 
 ## Config
@@ -165,7 +171,7 @@ No test framework is configured.
 - **Auth**: Clerk with email/password + Google OAuth. Wired via `<ClerkProvider>` in root `_layout.tsx`. Token cache via `expo-secure-store` (no-op on web).
 - **Signed-out users**: `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`
 - **Signed-in users**: Main tabs; onboarding guard redirects to `(onboarding)/` if profile incomplete, home if already onboarded.
-- **Firestore**: JS SDK (`firebase 12.13.0`) in `src/lib/firebase.ts` → exports `db`. Collections: `workout_routines`, `workout_sessions`, `exercise_library`, `exercise_guides`, `user_ai_plans`. Optimize with `orderBy()` and `limit()`.
+- **Firestore**: JS SDK (`firebase 12.13.0`) in `src/lib/firebase.ts` → exports `db`. Collections: `workout_routines`, `workout_sessions`, `exercise_library`, `exercise_guides`, `user_ai_plans`, `error_logs`, `user_events`, `notifications`, `fcm_tokens`. Optimize with `orderBy()` and `limit()`.
 - **AI Integration**: Groq API (llama-3.3-70b-versatile) in `src/features/profile/ai-service/` — generates personalized weekly workout plans, saves to `user_ai_plans` (Firestore) + `expo-secure-store` cache. Requires `EXPO_PUBLIC_GROQ_API_KEY`.
 
 ## Known Issues & Edge Cases
@@ -191,9 +197,10 @@ No test framework is configured.
 
 ## Best Practices
 
-- **Firestore Collections**: NEVER hardcode names — use constants from `src/constants/collections.ts` (`ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`, `EXERCISE_LIBRARY_COLLECTION`, `GUIDES_COLLECTION`, `USER_AI_PLANS_COLLECTION`).
+- **Firestore Collections**: NEVER hardcode names — use constants from `src/constants/collections.ts` (`ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`, `EXERCISE_LIBRARY_COLLECTION`, `GUIDES_COLLECTION`, `USER_AI_PLANS_COLLECTION`, `ERROR_LOGS_COLLECTION`, `USER_EVENTS_COLLECTION`, `NOTIFICATIONS_COLLECTION`, `FCM_TOKENS_COLLECTION`).
 - **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` — use `getLocalDateString()` from `src/utils/date.ts`. Note: this rule is currently violated in Progress and History.
 - **Unit**: Always `kg` (Vietnamese audience).
+- **Email Service**: Integrates with the Brevo REST API to route important push alerts (Streak warnings, AI plan availability) to users' email addresses directly from the client. Configured via `EXPO_PUBLIC_BREVO_API_KEY` and `EXPO_PUBLIC_BREVO_SENDER_EMAIL` in `.env`.
 - **Design First**: Read designs before implementing UI.
 - **Ask Before Doing**: Confirm logic/design before coding.
 - **Plan & Confirm**: Produce plan first, get approval before writing code.

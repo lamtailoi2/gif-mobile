@@ -24,6 +24,9 @@ import {
   Ionicons,
   FontAwesome,
 } from "@expo/vector-icons";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { ToastProvider } from "@/context/toast-context";
+import { NotificationProvider } from "@/context/notification-context";
 
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
@@ -74,12 +77,18 @@ export default function RootLayout() {
           <ThemeProvider
             value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
           >
-            <AnimatedSplashOverlay />
-            <LayoutContent>
-              {loaded || error ? (
-                <Stack screenOptions={{ headerShown: false }} />
-              ) : null}
-            </LayoutContent>
+            <ErrorBoundary>
+              <ToastProvider>
+                <NotificationProvider>
+                  <AnimatedSplashOverlay />
+                  <LayoutContent>
+                    {loaded || error ? (
+                      <Stack screenOptions={{ headerShown: false }} />
+                    ) : null}
+                  </LayoutContent>
+                </NotificationProvider>
+              </ToastProvider>
+            </ErrorBoundary>
           </ThemeProvider>
         </ClerkProvider>
       </GluestackUIProvider>

@@ -3,3 +3,7 @@ export const WORKOUT_SESSIONS_COLLECTION = "workout_sessions";
 export const EXERCISE_LIBRARY_COLLECTION = "exercise_library";
 export const GUIDES_COLLECTION = "exercise_guides";
 export const USER_AI_PLANS_COLLECTION = "user_ai_plans";
+export const ERROR_LOGS_COLLECTION = "error_logs";
+export const USER_EVENTS_COLLECTION = "user_events";
+export const NOTIFICATIONS_COLLECTION = "notifications";
+export const FCM_TOKENS_COLLECTION = "fcm_tokens";

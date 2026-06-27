@@ -24,7 +24,6 @@ export default function HomeScreen() {
       <AppHeader
         avatarUrl={user?.imageUrl}
         hasNotification={data?.hasNotification ?? false}
-        onNotificationPress={() => console.log("notification pressed")}
       />
 
       {isLoading || !data ? (
