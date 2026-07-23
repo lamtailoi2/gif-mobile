@@ -9,8 +9,11 @@
 | `npm run android` | Start for Android |
 | `npm run ios` | Start for iOS |
 | `npm run lint` | Run `expo lint` |
+| `npm test` | Run Jest unit tests |
+| `npm run test:watch` | Run Jest in watch mode |
+| `npm run test:coverage` | Run Jest with coverage |
 
-No test framework is configured.
+Unit tests use Jest + `jest-expo` for Expo/RN-compatible logic testing.
 
 ## Architecture
 
@@ -150,7 +153,7 @@ No test framework is configured.
 
 ## Tooling
 
-- **No tests, no CI**, no Prettier config
+- **Tests**: Jest + `jest-expo` for logic unit tests, no CI, no Prettier config
 - VS Code extensions: `expo.vscode-expo-tools`, Tailwind CSS IntelliSense
 - `npm run reset-project` moves `/src` → `/example` and scaffolds blank project
 
@@ -172,7 +175,7 @@ No test framework is configured.
 
 | Issue | Impact | Location |
 |---|---|---|
-| **Date inconsistency** | Progress (`toISOString().split('T')[0]`, UTC) and History (`completedAt.split('T')[0]`) use UTC while Home dashboard uses `getLocalDateString()` (local time). Breaks date matching for streak/today's workout checks. | `progress/apis/index.tsx:75`, `history/apis/index.ts:43` |
+| **Date consistency regression risk** | Date grouping should use `getLocalDateString()` consistently. Keep regression coverage for History/Progress/Home date matching, especially around local midnight. | `utils/date.ts`, `progress/apis/index.tsx`, `history/apis/index.ts`, `home/apis/*` |
 | **Missing exercise IDs** | AI-generated or deleted exercise IDs are silently filtered in `getRoutineWithExercises` — user sees a workout with missing exercises and no feedback. | `workout-session/apis/routines.ts:59-66` |
 | `completedAt` guard | `getWorkoutHistory` filters out docs without `completedAt`, but `saveWorkoutSession` has no validation — could save incomplete data. | `history/apis/index.ts:36` |
 | **Session double-save** | `sessionSaved` flag lives in Zustand memory — if app crashes after flag set but before navigation, flag resets → user can save duplicate session. | `workout-session/store/use-workout-session-store.ts:32` |
@@ -192,8 +195,9 @@ No test framework is configured.
 ## Best Practices
 
 - **Firestore Collections**: NEVER hardcode names — use constants from `src/constants/collections.ts` (`ROUTINES_COLLECTION`, `WORKOUT_SESSIONS_COLLECTION`, `EXERCISE_LIBRARY_COLLECTION`, `GUIDES_COLLECTION`, `USER_AI_PLANS_COLLECTION`).
-- **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` — use `getLocalDateString()` from `src/utils/date.ts`. Note: this rule is currently violated in Progress and History.
+- **Date & Timezone**: NEVER use `new Date().toISOString().slice(0, 10)` or `new Date().toISOString().split('T')[0]` for local day grouping — use `getLocalDateString()` from `src/utils/date.ts`.
 - **Unit**: Always `kg` (Vietnamese audience).
 - **Design First**: Read designs before implementing UI.
 - **Ask Before Doing**: Confirm logic/design before coding.
 - **Plan & Confirm**: Produce plan first, get approval before writing code.
+- **Plan Mode**: If there are blocking ambiguities, ask verification questions once; otherwise proceed with explicit assumptions. Create a draft plan in `plans/` before implementation. For non-trivial plans, use available review/sub-agent tooling to check scope, risks, missing tests, and sequencing; if unavailable, perform an explicit self-review. Update the draft from that feedback until it is actionable, then ask for approval before coding. Do not repeatedly ask the same clarification unless new conflicting information appears.

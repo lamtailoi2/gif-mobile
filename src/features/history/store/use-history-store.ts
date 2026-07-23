@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getLocalDateString } from '@/utils/date';
 
 export type TTimeView = 'Week' | 'Month' | 'All Time';
 
@@ -15,7 +16,7 @@ export interface IHistoryState {
 }
 
 // Lấy ngày hôm nay làm mặc định (YYYY-MM-DD)
-const today = new Date().toISOString().split('T')[0];
+const today = getLocalDateString();
 
 export const useHistoryStore = create<IHistoryState>((set) => ({
     timeView: 'Week',
